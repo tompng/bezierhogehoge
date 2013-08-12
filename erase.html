@@ -1,0 +1,144 @@
+<meta charset='utf-8'>
+<script src='http://code.jquery.com/jquery-latest.js'></script>
+<script src='bezier.js'></script>
+<script src='polymath.js'></script>
+<script>
+var W,H;
+var g,canvas;
+var bezierD=2;
+
+var objects=[];
+
+var DrawTool={
+  start:function(x,y){
+    this.line=[{x:x,y:y}];
+  },
+  drag:function(x,y){
+    var last=this.line[this.line.length-1];
+    this.line.push({x:x,y:y})
+    render();
+    renderLine(this.line);
+    if(dotFlag)renderDot(this.line);
+  },
+  end:function(){
+    objects.push(BezierConverter.convert(this.line,bezierD));
+    this.line=null;
+    render();
+  }
+}
+var EraseTool={
+  start:function(x,y){
+    this.erase(x,y,32);
+    this.support(x,y,32);
+  },
+  drag:function(x,y){
+    this.erase(x,y,32);
+    this.support(x,y,32);
+  },
+  erase:function(x,y,r){
+    var out=[];
+    for(var i=0;i<objects.length;i++){
+      var lefts=bezierErase(objects[i],x,y,r);
+      out.push.apply(out,lefts);
+    }
+    objects=out;
+    render();
+  },
+  over:function(x,y){
+    render();
+    this.support(x,y,32);
+  },
+  support:function(x,y,r){
+    g.globalAlpha=0.1;
+    g.beginPath();
+    g.arc(x,y,r,0,2*Math.PI,true);
+    g.stroke();
+    g.globalAlpha=1;
+  }
+}
+var tool=EraseTool;
+var dotFlag=true;
+$(function(){
+  canvas=$('canvas').get(0)
+  W=canvas.width;
+  H=canvas.height;
+  g=canvas.getContext('2d');
+  var toolFlag=false
+  $('canvas').on('mousedown',function(e){
+    toolFlag=true;
+    if(tool.start)tool.start(e.pageX,e.pageY);
+    return false;
+  })
+  $(document).on('mouseup',function(e){
+    if(toolFlag){
+      if(tool.end)tool.end();
+      toolFlag=false;
+    }
+    return false;
+  })
+  $(document).on('mousemove',function(e){
+    if(toolFlag){
+      if(tool.drag)tool.drag(e.pageX,e.pageY);
+    }else{
+      if(tool.over)tool.over(e.pageX,e.pageY);
+    }
+  })
+  var N=200;
+  var noise=2;
+  var line=[];for(var i=0;i<=N;i++){
+    t=i/N;
+    t=t+Math.sin(20*t)/40;
+    line.push({x:200+100*(1+t)*Math.cos(2*Math.PI*t)+noise*Math.random(),y:200+100*(1+t)*Math.sin(2*Math.PI*t)+noise*Math.random()})
+  }
+  objects.push(BezierConverter.convert(line,bezierD));
+  render();
+});
+
+function render(){
+  g.clearRect(0,0,W,H);
+  g.fillStyle="cyan"
+  g.strokeStyle='black'
+  g.lineJoin="round"
+  g.lineWidth=4
+  g.lineCap='round'
+  for(var i=0;i<objects.length;i++){
+    renderLine(objects[i]);
+    if(dotFlag)renderDot(objects[i]);
+  }
+}
+
+function renderDot(points){
+  g.beginPath();
+  for(var i=0;i<points.length;i++){
+    var p=points[i];
+    g.moveTo(p.x,p.y);
+    g.arc(p.x,p.y,2,0,2*Math.PI,true);
+  }
+  g.fill();
+}
+function renderLine(line){
+  var p=line[0];
+  g.beginPath();
+  g.moveTo(p.x,p.y);
+  for(var i=1;i<line.length;i++){
+    var p=line[i-1]
+    var q=line[i];
+    var ax=p.dx||0,ay=p.dy||0;
+    var bx=q.dx||0,by=q.dy||0;
+    var dx=q.x-p.x,dy=q.y-p.y;
+    var len=Math.sqrt(dx*dx+dy*dy);
+    g.bezierCurveTo(p.x+ax*len/3,p.y+ay*len/3,q.x-bx*len/3,q.y-by*len/3,q.x,q.y);
+  }
+  g.stroke();
+}
+</script>
+<style>
+canvas{position:absolute;left:0;top:0;background:#eee;}
+div.tools{position:fixed;left:0;top:0;height:0;}
+</style>
+<canvas style='position:absolute;left:0;top:0;background:#eee;' width=1024 height=1024></canvas>
+<div class=tools>
+  <button onclick='tool=DrawTool'>Draw</button>
+  <button onclick='tool=EraseTool'>Erase</button>
+  <input type=checkbox onchange="dotFlag=checked;render()" checked>
+</div>
