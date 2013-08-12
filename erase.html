@@ -27,13 +27,26 @@ var DrawTool={
   }
 }
 var EraseTool={
+  r:32,
   start:function(x,y){
-    this.erase(x,y,32);
-    this.support(x,y,32);
+    this.erase(x,y,this.r);
+    this.prevX=x;this.prevY=y;
+    this.support(x,y,this.r);
   },
   drag:function(x,y){
-    this.erase(x,y,32);
-    this.support(x,y,32);
+    this.erase(x,y,this.r);
+    if(x!=this.prevX||y!=this.prevY){
+      var out=[];
+      for(var i=0;i<objects.length;i++){
+        var dx=this.prevX-x,dy=this.prevY-y;
+        var lefts=bezierEraseRect(objects[i],x,y,dx,dy,2*this.r);
+        out.push.apply(out,lefts);
+      }
+      objects=out;
+      render();
+    }
+    this.prevX=x;this.prevY=y;
+    this.support(x,y,this.r);
   },
   erase:function(x,y,r){
     var out=[];
@@ -46,7 +59,7 @@ var EraseTool={
   },
   over:function(x,y){
     render();
-    this.support(x,y,32);
+    this.support(x,y,this.r);
   },
   support:function(x,y,r){
     g.globalAlpha=0.1;
