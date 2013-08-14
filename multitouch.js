@@ -78,6 +78,7 @@
     function move(e){
       touch._move(e);
       mupdate();
+      return false;
     }
     function up(e){
       touch._end(e);
@@ -85,12 +86,14 @@
       mupdate();
       $(document).off('mousemove',move);
       $(document).off('mouseup',up);
+      return false;
     }
     var _this=this;
     this.on('mousedown',function(e){
       down(e);
       $(document).on('mousemove',move);
       $(document).on('mouseup',up);
+      return false;
     });
   }
 })(jQuery)
