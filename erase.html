@@ -76,32 +76,48 @@ $(function(){
   W=canvas.width;
   H=canvas.height;
   g=canvas.getContext('2d');
-  var toolFlag=false
+  var toolFlag=false;
+  var prev=null;
   $('canvas').on('mousedown',start).on('touchstart',start);
   function start(e){
-    if(event.changedTouches)e=event.changedTouches[0];
-    toolFlag=true;
-    if(tool.start)tool.start(e.pageX,e.pageY);
+    if(event.touches)e=event.touches[0];
+    if(!toolFlag){
+      toolFlag=true;
+      if(tool.start)tool.start(e.pageX,e.pageY);
+      prev={x:e.pageX,y:e.pageY};
+    }
     return false;
   };
   $(document).on('mouseup',end).on('touchend',end);
   function end(e){
-    if(e.changedTouches)e=e.changedTouches[0];
     if(toolFlag){
       if(tool.end)tool.end();
       toolFlag=false;
+      prev=null;
       return false;
     }
   };
   $(document).on('mousemove',move).on('touchmove',move);
   function move(e){
-    if(event.changedTouches)e=event.changedTouches[0];
+    if(event.touches)e=nearestTouch(event.touches,prev);
+    prev={x:e.pageX,y:e.pageY};
     if(toolFlag){
       if(tool.drag)tool.drag(e.pageX,e.pageY);
     }else{
       if(tool.over)tool.over(e.pageX,e.pageY);
     }
   };
+  function nearestTouch(touches,prev){
+    var e=null,rmin=Infinity;
+    for(var i=0;i<touches.length;i++){
+      var touch=touches[i];
+      var dx=touch.pageX-prev.x;
+      var dy=touch.pageY-prev.y;
+      var r2=dx*dx+dy*dy;
+      if(r2<rmin){rmin=r2;e=touch;}
+    }
+    return e;
+  }
   var N=200;
   var noise=2;
   var line=[];for(var i=0;i<=N;i++){
@@ -153,7 +169,8 @@ function renderLine(line){
 </script>
 <style>
 canvas{position:absolute;left:0;top:0;background:#eee;}
-div.tools{position:fixed;left:0;top:0;height:0;}
+div.tools{position:fixed;left:10px;top:10px;height:0;}
+button, input{font-size:16px;}
 </style>
 <canvas style='position:absolute;left:0;top:0;background:#eee;' width=1024 height=1024></canvas>
 <div class=tools>
