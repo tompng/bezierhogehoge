@@ -115,10 +115,10 @@ function solveAll(arr,level){
 
 function bezierErase(bezier,x,y,r){
   var outs=[];
-  var ta=[1,-3,3,-1];
+  var ta=[1,0,-3,2];
   var tb=[0,1,-2,1];
   var tc=[0,0,1,-1];
-  var td=[0,0,0,1];
+  var td=[0,0,3,-2];
 
   var last=null;
   function push(p1,p2){
@@ -135,8 +135,8 @@ function bezierErase(bezier,x,y,r){
     var dx=p2.x-p1.x,dy=p2.y-p1.y;
     var len=Math.sqrt(dx*dx+dy*dy);
 
-    var xa=p1.x,xb=3*p1.x+len*p1.dx,xc=3*p2.x-len*p2.dx,xd=p2.x;
-    var ya=p1.y,yb=3*p1.y+len*p1.dy,yc=3*p2.y-len*p2.dy,yd=p2.y;
+    var xa=p1.x,xb=len*p1.dx,xc=-len*p2.dx,xd=p2.x;
+    var ya=p1.y,yb=len*p1.dy,yc=-len*p2.dy,yd=p2.y;
     var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
     var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
     bezx[0]-=x;
@@ -235,10 +235,10 @@ function solveRect(a1,a2,level){
 
 function bezierEraseRect(bezier,x,y,rx,ry,width){
   var outs=[];
-  var ta=[1,-3,3,-1];
+  var ta=[1,0,-3,2];
   var tb=[0,1,-2,1];
   var tc=[0,0,1,-1];
-  var td=[0,0,0,1];
+  var td=[0,0,3,-2];
 
   var length=Math.sqrt(rx*rx+ry*ry);
   rx/=length;
@@ -259,8 +259,8 @@ function bezierEraseRect(bezier,x,y,rx,ry,width){
     var dx=p2.x-p1.x,dy=p2.y-p1.y;
     var len=Math.sqrt(dx*dx+dy*dy);
 
-    var xa=p1.x,xb=3*p1.x+len*p1.dx,xc=3*p2.x-len*p2.dx,xd=p2.x;
-    var ya=p1.y,yb=3*p1.y+len*p1.dy,yc=3*p2.y-len*p2.dy,yd=p2.y;
+    var xa=p1.x,xb=len*p1.dx,xc=-len*p2.dx,xd=p2.x;
+    var ya=p1.y,yb=len*p1.dy,yc=-len*p2.dy,yd=p2.y;
     var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
     var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
     bezx[0]-=x+rx*length/2;
