@@ -124,8 +124,11 @@ canvas{position:absolute;left:0;top:0;background:#eee;}
   box-shadow:0 0 2px gray;
 }
 
-#tools.draw #draw{background:silver;}
-#tools.erase #erase{background:silver;}
+#tools.draw #draw, #tools.erase #erase{
+  background:gray;
+  color:white;
+}
+
 button, input{font-size:16px;}
 </style>
 <canvas style='position:absolute;left:0;top:0;background:#eee;' width=1024 height=1024></canvas>
