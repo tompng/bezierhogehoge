@@ -1,5 +1,6 @@
 <meta charset='utf-8'>
 <script src='http://code.jquery.com/jquery-latest.js'></script>
+<script src='multitouch.js'></script>
 <script src='bezier.js'></script>
 <script src='polymath.js'></script>
 <script>
@@ -9,115 +10,59 @@ var bezierD=2;
 
 var objects=[];
 
-var DrawTool={
-  start:function(x,y){
-    this.line=[{x:x,y:y}];
-  },
-  drag:function(x,y){
-    var last=this.line[this.line.length-1];
-    this.line.push({x:x,y:y})
-    render();
-    renderLine(this.line);
-    if(dotFlag)renderDot(this.line);
-  },
-  end:function(){
-    objects.push(BezierConverter.convert(this.line,bezierD));
-    this.line=null;
-    render();
+function DrawTool(touch){
+  touch.move=function(){
+  }
+  touch.update=function(alive){
+    renderLine(touch.points);
+  }
+  touch.end=function(){
+    objects.push(BezierConverter.convert(this.points,bezierD));
   }
 }
-var EraseTool={
-  r:32,
-  start:function(x,y){
-    this.erase(x,y,this.r);
-    this.prevX=x;this.prevY=y;
-    this.support(x,y,this.r);
-  },
-  drag:function(x,y){
-    this.erase(x,y,this.r);
-    if(x!=this.prevX||y!=this.prevY){
-      var out=[];
-      for(var i=0;i<objects.length;i++){
-        var dx=this.prevX-x,dy=this.prevY-y;
-        var lefts=bezierEraseRect(objects[i],x,y,dx,dy,2*this.r);
-        out.push.apply(out,lefts);
-      }
-      objects=out;
-      render();
-    }
-    this.prevX=x;this.prevY=y;
-    this.support(x,y,this.r);
-  },
-  erase:function(x,y,r){
+
+function EraseTool(touch){
+  var r=32;
+  function erase(x,y){
     var out=[];
     for(var i=0;i<objects.length;i++){
       var lefts=bezierErase(objects[i],x,y,r);
       out.push.apply(out,lefts);
     }
     objects=out;
-    render();
-  },
-  over:function(x,y){
-    render();
-    this.support(x,y,this.r);
-  },
-  support:function(x,y,r){
+  }
+  erase(touch.x,touch.y);
+  touch.move=function(point){
+    var prev=touch.points[touch.points.length-2];
+    erase(point.x,point.y);
+    var dx=point.x-prev.x;
+    var dy=point.y-prev.y;
+    var out=[];
+    for(var i=0;i<objects.length;i++){
+      var lefts=bezierEraseRect(objects[i],prev.x,prev.y,dx,dy,2*r);
+      out.push.apply(out,lefts);
+    }
+    objects=out;
+  }
+  touch.update=function(point){
     g.globalAlpha=0.1;
     g.beginPath();
-    g.arc(x,y,r,0,2*Math.PI,true);
+    g.arc(point.x,point.y,r,0,2*Math.PI,true);
     g.stroke();
     g.globalAlpha=1;
   }
 }
-var tool=EraseTool;
+var Tool=DrawTool;
 var dotFlag=true;
 $(function(){
   canvas=$('canvas').get(0)
   W=canvas.width;
   H=canvas.height;
   g=canvas.getContext('2d');
-  var toolFlag=false;
-  var prev=null;
-  $('canvas').on('mousedown',start).on('touchstart',start);
-  function start(e){
-    if(event.touches)e=event.touches[0];
-    if(!toolFlag){
-      toolFlag=true;
-      if(tool.start)tool.start(e.pageX,e.pageY);
-      prev={x:e.pageX,y:e.pageY};
-    }
-    return false;
-  };
-  $(document).on('mouseup',end).on('touchend',end);
-  function end(e){
-    if(toolFlag){
-      if(tool.end)tool.end();
-      toolFlag=false;
-      prev=null;
-      return false;
-    }
-  };
-  $(document).on('mousemove',move).on('touchmove',move);
-  function move(e){
-    if(event.touches)e=nearestTouch(event.touches,prev);
-    prev={x:e.pageX,y:e.pageY};
-    if(toolFlag){
-      if(tool.drag)tool.drag(e.pageX,e.pageY);
-    }else{
-      if(tool.over)tool.over(e.pageX,e.pageY);
-    }
-  };
-  function nearestTouch(touches,prev){
-    var e=null,rmin=Infinity;
-    for(var i=0;i<touches.length;i++){
-      var touch=touches[i];
-      var dx=touch.pageX-prev.x;
-      var dy=touch.pageY-prev.y;
-      var r2=dx*dx+dy*dy;
-      if(r2<rmin){rmin=r2;e=touch;}
-    }
-    return e;
-  }
+  $('canvas').multitouch(function(touch){
+    new Tool(touch);
+  },render);
+
   var N=200;
   var noise=2;
   var line=[];for(var i=0;i<=N;i++){
@@ -169,12 +114,22 @@ function renderLine(line){
 </script>
 <style>
 canvas{position:absolute;left:0;top:0;background:#eee;}
-div.tools{position:fixed;left:10px;top:10px;height:0;}
+#tools{position:fixed;left:10px;top:10px;height:0;}
+#tools div{
+  background:white;color:gray;
+  display:inline-block;
+  padding:4px 16px;
+  margin: 0 8px;
+  box-shadow:0 0 2px gray;
+}
+
+#tools.draw #draw{background:silver;}
+#tools.erase #erase{background:silver;}
 button, input{font-size:16px;}
 </style>
 <canvas style='position:absolute;left:0;top:0;background:#eee;' width=1024 height=1024></canvas>
-<div class=tools>
-  <button onclick='tool=DrawTool;render();'>Draw</button>
-  <button onclick='tool=EraseTool;render();'>Erase</button>
+<div id='tools' class='draw'>
+  <div id='draw' onclick="Tool=DrawTool;$('#tools').attr('class','draw');render();">Draw</div>
+  <div id='erase' onclick="Tool=EraseTool;$('#tools').attr('class','erase');render();">Erase</div>
   <input type=checkbox onchange="dotFlag=checked;render()" checked>
 </div>
