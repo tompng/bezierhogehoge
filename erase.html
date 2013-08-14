@@ -77,25 +77,31 @@ $(function(){
   H=canvas.height;
   g=canvas.getContext('2d');
   var toolFlag=false
-  $('canvas').on('mousedown',function(e){
+  $('canvas').on('mousedown',start).on('touchstart',start);
+  function start(e){
+    if(event.changedTouches)e=event.changedTouches[0];
     toolFlag=true;
     if(tool.start)tool.start(e.pageX,e.pageY);
     return false;
-  })
-  $(document).on('mouseup',function(e){
+  };
+  $(document).on('mouseup',end).on('touchend',end);
+  function end(e){
+    if(e.changedTouches)e=e.changedTouches[0];
     if(toolFlag){
       if(tool.end)tool.end();
       toolFlag=false;
+      return false;
     }
-    return false;
-  })
-  $(document).on('mousemove',function(e){
+  };
+  $(document).on('mousemove',move).on('touchmove',move);
+  function move(e){
+    if(event.changedTouches)e=event.changedTouches[0];
     if(toolFlag){
       if(tool.drag)tool.drag(e.pageX,e.pageY);
     }else{
       if(tool.over)tool.over(e.pageX,e.pageY);
     }
-  })
+  };
   var N=200;
   var noise=2;
   var line=[];for(var i=0;i<=N;i++){
@@ -112,7 +118,7 @@ function render(){
   g.fillStyle="cyan"
   g.strokeStyle='black'
   g.lineJoin="round"
-  g.lineWidth=4
+  g.lineWidth=2
   g.lineCap='round'
   for(var i=0;i<objects.length;i++){
     renderLine(objects[i]);
@@ -151,7 +157,7 @@ div.tools{position:fixed;left:0;top:0;height:0;}
 </style>
 <canvas style='position:absolute;left:0;top:0;background:#eee;' width=1024 height=1024></canvas>
 <div class=tools>
-  <button onclick='tool=DrawTool'>Draw</button>
-  <button onclick='tool=EraseTool'>Erase</button>
+  <button onclick='tool=DrawTool;render();'>Draw</button>
+  <button onclick='tool=EraseTool;render();'>Erase</button>
   <input type=checkbox onchange="dotFlag=checked;render()" checked>
 </div>
