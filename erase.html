@@ -15,6 +15,7 @@ function DrawTool(touch){
   }
   touch.update=function(alive){
     renderLine(touch.points);
+    if(dotFlag)renderDot(touch.points);
   }
   touch.end=function(){
     objects.push(BezierConverter.convert(this.points,bezierD));
