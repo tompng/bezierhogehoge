@@ -13,7 +13,7 @@ var objects=[];
 function DrawTool(touch){
   touch.move=function(){
   }
-  touch.update=function(alive){
+  touch.update=function(point){
     renderLine(touch.points);
     if(dotFlag)renderDot(touch.points);
   }
@@ -21,6 +21,42 @@ function DrawTool(touch){
     objects.push(BezierConverter.convert(this.points,bezierD));
   }
 }
+
+function MoveTool(touch){
+  var r=32;
+  var mobjs=[];
+  var x=touch.x;
+  var y=touch.y;
+  for(var i=0;i<objects.length;i++){
+    if(bezierIntersect(objects[i],x,y,r)){
+      mobjs.push(objects[i]);
+    }
+  }
+  touch.move=function(point){
+    var dx=point.x-x;
+    var dy=point.y-y;
+    for(var i=0;i<mobjs.length;i++){
+      var bezier=mobjs[i];
+      for(var j=0;j<bezier.length;j++){
+        bezier[j].x+=dx;
+        bezier[j].y+=dy;
+      }
+    }
+    x=point.x;
+    y=point.y;
+  }
+  touch.update=function(point){
+    g.globalAlpha=0.1;
+    g.beginPath();
+    g.arc(point.x,point.y,r,0,2*Math.PI,true);
+    g.stroke();
+    g.globalAlpha=1;
+  }
+  touch.end=function(){
+
+  }
+}
+
 
 function EraseTool(touch){
   var r=32;
@@ -125,7 +161,7 @@ canvas{position:absolute;left:0;top:0;background:#eee;}
   box-shadow:0 0 2px gray;
 }
 
-#tools.draw #draw, #tools.erase #erase{
+#tools.draw #draw, #tools.erase #erase, #tools.move #move{
   background:gray;
   color:white;
 }
@@ -135,6 +171,7 @@ button, input{font-size:16px;}
 <canvas style='position:absolute;left:0;top:0;background:#eee;' width=1024 height=1024></canvas>
 <div id='tools' class='draw'>
   <div id='draw' onclick="Tool=DrawTool;$('#tools').attr('class','draw');render();">Draw</div>
+  <div id='move' onclick="Tool=MoveTool;$('#tools').attr('class','move');render();">Move</div>
   <div id='erase' onclick="Tool=EraseTool;$('#tools').attr('class','erase');render();">Erase</div>
   <input type=checkbox onchange="dotFlag=checked;render()" checked>
 </div>

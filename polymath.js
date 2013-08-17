@@ -297,3 +297,30 @@ function bezierEraseRect(bezier,x,y,rx,ry,width){
   }
   return outs;
 }
+
+function bezierIntersect(bezier,x,y,r){
+  var ta=[1,0,-3,2];
+  var tb=[0,1,-2,1];
+  var tc=[0,0,1,-1];
+  var td=[0,0,3,-2];
+
+  for(var i=0;i<bezier.length-1;i++){
+    var p1=bezier[i],p2=bezier[i+1];
+    var dx=p2.x-p1.x,dy=p2.y-p1.y;
+    var len=Math.sqrt(dx*dx+dy*dy);
+
+    var xa=p1.x,xb=len*p1.dx,xc=-len*p2.dx,xd=p2.x;
+    var ya=p1.y,yb=len*p1.dy,yc=-len*p2.dy,yd=p2.y;
+    var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
+    var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
+    bezx[0]-=x;
+    bezy[0]-=y;
+
+    var r2=polyAdd(polyMult(bezx,bezx),polyMult(bezy,bezy));
+    r2[0]-=r*r;
+
+    var results=solveAll(r2,10);
+    if(results.length!=1||results[0][0]!=0||results[0][1]!=1)return true;
+  }
+  return false;
+}
