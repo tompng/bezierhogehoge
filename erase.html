@@ -10,15 +10,6 @@ var bezierD=2;
 
 var objects=[];
 
-function addLen(bezier){
-  for(var i=0;i<bezier.length-1;i++){
-    var a=bezier[i],b=bezier[i+1];
-    var dx=b.x-a.x,dy=b.y-a.y;
-    var r=Math.sqrt(dx*dx+dy*dy);
-    a.ln=r/3;
-    b.lp=r/3;
-  }
-}
 
 function DrawTool(touch){
   touch.move=function(){
@@ -28,9 +19,7 @@ function DrawTool(touch){
     if(dotFlag)renderDot(touch.points);
   }
   touch.end=function(){
-    var bez=BezierConverter.convert(this.points,bezierD);
-    addLen(bez);
-    objects.push(bez);
+    objects.push(BezierConverter.convert(this.points,bezierD));
   }
 }
 
@@ -119,9 +108,7 @@ $(function(){
     t=t+Math.sin(20*t)/40;
     line.push({x:200+100*(1+t)*Math.cos(2*Math.PI*t)+noise*Math.random(),y:200+100*(1+t)*Math.sin(2*Math.PI*t)+noise*Math.random()})
   }
-  var bez=BezierConverter.convert(line,bezierD);
-  addLen(bez);
-  objects.push(bez);
+  objects.push(BezierConverter.convert(line,bezierD));
   render();
 });
 

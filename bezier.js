@@ -145,6 +145,13 @@ BezierConverter.bezier=function(line,d){
     out.push(line[0]);
   }
   console.log(olen,out.length)
+  for(var i=0;i<out.length-1;i++){
+    var a=out[i],b=out[i+1];
+    var dx=b.x-a.x,dy=b.y-a.y;
+    var r=Math.sqrt(dx*dx+dy*dy);
+    a.ln=r/3;
+    b.lp=r/3;
+  }
   return out;
 }
 
