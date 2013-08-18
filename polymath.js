@@ -308,17 +308,15 @@ function bezierEraseRect(bezier,x,y,rx,ry,width){
 
 function bezierIntersect(bezier,x,y,r){
   var ta=[1,0,-3,2];
-  var tb=[0,1,-2,1];
-  var tc=[0,0,1,-1];
+  var tb=[0,3,-6,3];
+  var tc=[0,0,3,-3];
   var td=[0,0,3,-2];
 
   for(var i=0;i<bezier.length-1;i++){
     var p1=bezier[i],p2=bezier[i+1];
-    var dx=p2.x-p1.x,dy=p2.y-p1.y;
-    var len=Math.sqrt(dx*dx+dy*dy);
 
-    var xa=p1.x,xb=len*p1.dx,xc=-len*p2.dx,xd=p2.x;
-    var ya=p1.y,yb=len*p1.dy,yc=-len*p2.dy,yd=p2.y;
+    var xa=p1.x,xb=p1.ln*p1.dx,xc=-p2.lp*p2.dx,xd=p2.x;
+    var ya=p1.y,yb=p1.ln*p1.dy,yc=-p2.lp*p2.dy,yd=p2.y;
     var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
     var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
     bezx[0]-=x;
