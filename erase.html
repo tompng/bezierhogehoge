@@ -10,6 +10,16 @@ var bezierD=2;
 
 var objects=[];
 
+function addLen(bezier){
+  for(var i=0;i<bezier.length-1;i++){
+    var a=bezier[i],b=bezier[i+1];
+    var dx=b.x-a.x,dy=b.y-a.y;
+    var r=Math.sqrt(dx*dx+dy*dy);
+    a.ln=r/3;
+    b.lp=r/3;
+  }
+}
+
 function DrawTool(touch){
   touch.move=function(){
   }
@@ -18,7 +28,9 @@ function DrawTool(touch){
     if(dotFlag)renderDot(touch.points);
   }
   touch.end=function(){
-    objects.push(BezierConverter.convert(this.points,bezierD));
+    var bez=BezierConverter.convert(this.points,bezierD);
+    addLen(bez);
+    objects.push(bez);
   }
 }
 
@@ -107,7 +119,9 @@ $(function(){
     t=t+Math.sin(20*t)/40;
     line.push({x:200+100*(1+t)*Math.cos(2*Math.PI*t)+noise*Math.random(),y:200+100*(1+t)*Math.sin(2*Math.PI*t)+noise*Math.random()})
   }
-  objects.push(BezierConverter.convert(line,bezierD));
+  var bez=BezierConverter.convert(line,bezierD);
+  addLen(bez);
+  objects.push(bez);
   render();
 });
 
@@ -140,11 +154,10 @@ function renderLine(line){
   for(var i=1;i<line.length;i++){
     var p=line[i-1]
     var q=line[i];
-    var ax=p.dx||0,ay=p.dy||0;
-    var bx=q.dx||0,by=q.dy||0;
-    var dx=q.x-p.x,dy=q.y-p.y;
-    var len=Math.sqrt(dx*dx+dy*dy);
-    g.bezierCurveTo(p.x+ax*len/3,p.y+ay*len/3,q.x-bx*len/3,q.y-by*len/3,q.x,q.y);
+    var ax=p.dx*p.ln||0,ay=p.dy*p.ln||0;
+    var bx=q.dx*q.lp||0,by=q.dy*q.lp||0;
+
+    g.bezierCurveTo(p.x+ax,p.y+ay,q.x-bx,q.y-by,q.x,q.y);
   }
   g.stroke();
 }

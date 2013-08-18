@@ -116,8 +116,8 @@ function solveAll(arr,level){
 function bezierErase(bezier,x,y,r){
   var outs=[];
   var ta=[1,0,-3,2];
-  var tb=[0,1,-2,1];
-  var tc=[0,0,1,-1];
+  var tb=[0,3,-6,3];
+  var tc=[0,0,3,-3];
   var td=[0,0,3,-2];
 
   var last=null;
@@ -132,11 +132,9 @@ function bezierErase(bezier,x,y,r){
 
   for(var i=0;i<bezier.length-1;i++){
     var p1=bezier[i],p2=bezier[i+1];
-    var dx=p2.x-p1.x,dy=p2.y-p1.y;
-    var len=Math.sqrt(dx*dx+dy*dy);
 
-    var xa=p1.x,xb=len*p1.dx,xc=-len*p2.dx,xd=p2.x;
-    var ya=p1.y,yb=len*p1.dy,yc=-len*p2.dy,yd=p2.y;
+    var xa=p1.x,xb=p1.ln*p1.dx,xc=-p2.lp*p2.dx,xd=p2.x;
+    var ya=p1.y,yb=p1.ln*p1.dy,yc=-p2.lp*p2.dy,yd=p2.y;
     var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
     var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
     bezx[0]-=x;
@@ -150,6 +148,7 @@ function bezierErase(bezier,x,y,r){
       var dy=polyAssign(polyDerivate(bezy),t)
       var r=Math.sqrt(dx*dx+dy*dy);
       p.dx=dx/r,p.dy=dy/r;
+      return r;
     }
 
     var results=solveAll(r2,10);
@@ -157,16 +156,21 @@ function bezierErase(bezier,x,y,r){
     for(var j=0;j<results.length;j++){
       var res=results[j];
       var a,b;
+      var t=res[1]-res[0];
       if(res[0]==0)a=p1;
       else{
         a={x:polyAssign(bezx,res[0])+x,y:polyAssign(bezy,res[0])+y,dx:0,dy:0}
-        dAt(a,res[0])
+        al=dAt(a,res[0]);
+        a.ln=al/3;
       }
       if(res[1]==1)b=p2;
       else{
         b={x:polyAssign(bezx,res[1])+x,y:polyAssign(bezy,res[1])+y,dx:0,dy:0}
-        dAt(b,res[1])
+        bl=dAt(b,res[1]);
+        b.lp=bl/3;
       }
+      a.ln*=t;
+      b.lp*=t;
       push(a,b);
     }
   }
@@ -236,8 +240,8 @@ function solveRect(a1,a2,level){
 function bezierEraseRect(bezier,x,y,rx,ry,width){
   var outs=[];
   var ta=[1,0,-3,2];
-  var tb=[0,1,-2,1];
-  var tc=[0,0,1,-1];
+  var tb=[0,3,-6,3];
+  var tc=[0,0,3,-3];
   var td=[0,0,3,-2];
 
   var length=Math.sqrt(rx*rx+ry*ry);
@@ -257,10 +261,9 @@ function bezierEraseRect(bezier,x,y,rx,ry,width){
   for(var i=0;i<bezier.length-1;i++){
     var p1=bezier[i],p2=bezier[i+1];
     var dx=p2.x-p1.x,dy=p2.y-p1.y;
-    var len=Math.sqrt(dx*dx+dy*dy);
 
-    var xa=p1.x,xb=len*p1.dx,xc=-len*p2.dx,xd=p2.x;
-    var ya=p1.y,yb=len*p1.dy,yc=-len*p2.dy,yd=p2.y;
+    var xa=p1.x,xb=p1.ln*p1.dx,xc=-p2.lp*p2.dx,xd=p2.x;
+    var ya=p1.y,yb=p1.ln*p1.dy,yc=-p2.lp*p2.dy,yd=p2.y;
     var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
     var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
     bezx[0]-=x+rx*length/2;
@@ -275,23 +278,28 @@ function bezierEraseRect(bezier,x,y,rx,ry,width){
       var dy=polyAssign(polyDerivate(bezy),t)
       var r=Math.sqrt(dx*dx+dy*dy);
       p.dx=dx/r,p.dy=dy/r;
+      return r;
     }
 
     var results=solveRect(rw,rl,10);
-
     for(var j=0;j<results.length;j++){
       var res=results[j];
       var a,b;
+      var t=res[1]-res[0];
       if(res[0]==0)a=p1;
       else{
         a={x:polyAssign(bezx,res[0])+x+rx*length/2,y:polyAssign(bezy,res[0])+y+ry*length/2,dx:0,dy:0}
-        dAt(a,res[0])
+        al=dAt(a,res[0]);
+        a.ln=al/3;
       }
       if(res[1]==1)b=p2;
       else{
         b={x:polyAssign(bezx,res[1])+x+rx*length/2,y:polyAssign(bezy,res[1])+y+ry*length/2,dx:0,dy:0}
-        dAt(b,res[1])
+        bl=dAt(b,res[1]);
+        b.lp=bl/3;
       }
+      a.ln*=t;
+      b.lp*=t;
       push(a,b);
     }
   }
