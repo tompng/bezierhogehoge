@@ -148,6 +148,15 @@ function renderLine(line){
   }
   g.stroke();
 }
+
+function set(mode){
+  switch(mode){
+    case 'draw':Tool=DrawTool;break;
+    case 'move':Tool=MoveTool;break;
+    case 'erase':Tool=EraseTool;break;
+  }
+  $('#tools').attr('class',mode);render();
+}
 </script>
 <style>
 canvas{position:absolute;left:0;top:0;background:#eee;}
@@ -170,8 +179,8 @@ button, input{font-size:16px;}
 </style>
 <canvas style='position:absolute;left:0;top:0;background:#eee;' width=1024 height=1024></canvas>
 <div id='tools' class='draw'>
-  <div id='draw' onclick="Tool=DrawTool;$('#tools').attr('class','draw');render();">Draw</div>
-  <div id='move' onclick="Tool=MoveTool;$('#tools').attr('class','move');render();">Move</div>
-  <div id='erase' onclick="Tool=EraseTool;$('#tools').attr('class','erase');render();">Erase</div>
+  <div id='draw' onclick="set('draw')" ontouchstart="set('draw')">Draw</div>
+  <div id='move' onclick="set('move')" ontouchstart="set('move')">Move</div>
+  <div id='erase' onclick="set('erase')" ontouchstart="set('erase')">Erase</div>
   <input type=checkbox onchange="dotFlag=checked;render()" checked>
 </div>

@@ -57,6 +57,7 @@ function polySolve(arr,t,step){
 
 
 function solveAll(arr,level){
+  var D=Math.pow(0.1,level);
   var rec=0;
   function comp(t0,t1){
     var min=0,max=0;
@@ -77,7 +78,7 @@ function solveAll(arr,level){
     var ymax=Math.max(y0,y1);
     if(ymin>sumdif)return 1;
     if(ymax<-sumdif)return -1;
-    return 0;
+    return [y0,y1,Math.abs(sumdif/sumc1)];
   }
   var outs=[];
   var last=[];
@@ -85,19 +86,33 @@ function solveAll(arr,level){
     if(last[1]==t0)last[1]=t1;
     else outs.push(last=[t0,t1]);
   }
-  function solve(t0,t1,i){
+  function solve(t0,t1){
     rec++;
     var c=comp(t0,t1);
-    if(c>0){
+    if(c==1){
       push(t0,t1);
-    }else if(c==0){
-      if(i<level){
-        var tm=(t0+t1)/2;
-        solve(t0,tm,i+1);
-        solve(tm,t1,i+1);
+    }else if(c!=-1){
+      var y0=c[0],y1=c[1],dt=c[2];
+      if(t1-t0>D){
+        if(y0*y1<0){
+          var tt=(t0*y1-t1*y0)/(y1-y0);
+          var s0=Math.max(tt-dt,t0);
+          var s1=Math.min(tt+dt,t1);
+          if(s0!=t0&&y0>0)push(t0,s0);
+          if(2*(s1-s0)<t1-t0){
+            solve(s0,s1);
+          }else{
+            var sm=(s0+s1)/2;
+            solve(s0,sm);
+            solve(sm,s1);
+          }
+          if(s1!=t1&&y1>0)push(s1,t1);
+        }else{
+          var tm=(t0+t1)/2;
+          solve(t0,tm);
+          solve(tm,t1);
+        }
       }else{
-        var y0=polyAssign(arr,t0);
-        var y1=polyAssign(arr,t1);
         if(y0>=0&&y1>=0)push(t0,t1);
         else if(y0>0||y1>0){
           var tt=(t1*y1-t0*y0)/(y1-y0);
@@ -107,7 +122,7 @@ function solveAll(arr,level){
       }
     }
   }
-  solve(0,1,0);
+  solve(0,1);
   if(rec>10)console.log(rec);
   return outs;
 }
