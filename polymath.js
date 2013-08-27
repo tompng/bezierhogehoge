@@ -45,14 +45,19 @@ function polyDerivate(arr){
   return out;
 }
 
-function polySolve(arr,t,step){
-  var darr=polyDerivate(arr);
-  for(var i=0;i<step;i++){
-    var y=polyAssign(arr,t);
-    var dy=polyAssign(darr,t);
-    t-=y/dy;
+function polyApprox(arr,t0,t1){
+  var sumdif=0,sumc0=arr[0],sumc1=arr[1];
+  var t0n=t0,t1n=t1;
+  for(var n=2;n<arr.length;n++){
+    t0n*=t0;t1n*=t1;
+    var c1=(t1n-t0n)/(t1-t0);
+    var cmin=c1*Math.pow(c1/n,1/(n-1))*(1/n-1);
+    var cmax=t0n-t0*c1;
+    sumc0+=arr[n]*(cmax+cmin)/2;
+    sumc1+=arr[n]*c1;
+    sumdif+=Math.abs(arr[n]*(cmax-cmin)/2);
   }
-  return t;
+  return [sumc0,sumc1,sumdif]
 }
 
 function RangeList(){
@@ -71,25 +76,15 @@ function solveAll(arr,level){
   var D=Math.pow(0.1,level);
   var rec=0;
   function comp(t0,t1){
-    var min=0,max=0;
-    var sumdif=0,sumc0=arr[0],sumc1=arr[1];
-    var t0n=t0,t1n=t1;
-    for(var n=2;n<arr.length;n++){
-      t0n*=t0;t1n*=t1;
-      var c1=(t1n-t0n)/(t1-t0);
-      var cmin=c1*Math.pow(c1/n,1/(n-1))*(1/n-1);
-      var cmax=t0n-t0*c1;
-      sumc0+=arr[n]*(cmax+cmin)/2;
-      sumc1+=arr[n]*c1;
-      sumdif+=Math.abs(arr[n]*(cmax-cmin)/2);
-    }
-    var y0=sumc0+sumc1*t0;
-    var y1=sumc0+sumc1*t1;
+    var tmp=polyApprox(arr,t0,t1);
+    var c0=tmp[0],c1=tmp[1],dif=tmp[2];
+    var y0=c0+c1*t0;
+    var y1=c0+c1*t1;
     var ymin=Math.min(y0,y1);
     var ymax=Math.max(y0,y1);
-    if(ymin>sumdif)return 1;
-    if(ymax<-sumdif)return -1;
-    return [y0,y1,Math.abs(sumdif/sumc1)];
+    if(ymin>dif)return 1;
+    if(ymax<-dif)return -1;
+    return [y0,y1,Math.abs(dif/c1)];
   }
 
   var range=new RangeList();
@@ -131,17 +126,17 @@ function solveAll(arr,level){
     }
   }
   solve(0,1);
-  if(rec>10)console.log(rec);
+  if(rec>10)console.log('b'+rec);
   return range.array;
 }
 
 function bezierEraseWith(bezier, eraser){
-  var outs=[];
   var ta=[1,0,-3,2];
   var tb=[0,3,-6,3];
   var tc=[0,0,3,-3];
   var td=[0,0,3,-2];
 
+  var outs=[];
   var last=null;
   function push(p1,p2){
     if(last&&last[last.length-1]==p1){
@@ -202,36 +197,21 @@ function CircleEraser(x,y,r){
     var r2=polyAdd(polyMult(bezx,bezx),polyMult(bezy,bezy));
     r2[0]-=r*r;
     bezx[0]=bezx0;bezy[0]=bezy0;
-    return solveAll(r2,10);
+    return solveAll(r2,5);
   }
 }
-
-function bezierErase(bezier,x,y,r){
-  return bezierEraseWith(bezier,new CircleEraser(x,y,r));
-}
-
 
 function solveRect(a1,a2,level){
   var rec=0;
   function rcomp(a,t0,t1){
-    var min=0,max=0;
-    var sumdif=0,sumc0=a[0],sumc1=a[1];
-    var t0n=t0,t1n=t1;
-    for(var n=2;n<a.length;n++){
-      t0n*=t0;t1n*=t1;
-      var c1=(t1n-t0n)/(t1-t0);
-      var cmin=c1*Math.pow(c1/n,1/(n-1))*(1/n-1);
-      var cmax=t0n-t0*c1;
-      sumc0+=a[n]*(cmax+cmin)/2;
-      sumc1+=a[n]*c1;
-      sumdif+=Math.abs(a[n]*(cmax-cmin)/2);
-    }
-    var y0=sumc0+sumc1*t0;
-    var y1=sumc0+sumc1*t1;
+    var tmp=polyApprox(a,t0,t1);
+    var c0=tmp[0],c1=tmp[1],dif=tmp[2];
+    var y0=c0+c1*t0;
+    var y1=c0+c1*t1;
     var ymin=Math.min(y0,y1);
     var ymax=Math.max(y0,y1);
-    if(-1+sumdif<ymin&&ymax<1-sumdif)return -1;
-    if(ymax<-1-sumdif||1+sumdif<ymin)return 1;
+    if(-1+dif<ymin&&ymax<1-dif)return -1;
+    if(ymax<-1-dif||1+dif<ymin)return 1;
     return 0;
   }
   var range=new RangeList();
@@ -261,7 +241,7 @@ function solveRect(a1,a2,level){
     }
   }
   solve(0,1,0);
-  if(rec>10)console.log(rec);
+  if(rec>10)console.log('a'+rec);
   return range.array;
 }
 
@@ -279,9 +259,6 @@ function RectEraser(x,y,rx,ry,width){
     bezx[0]=bezx0;bezy[0]=bezy0;
     return solveRect(rw,rl,10);
   }
-}
-function bezierEraseRect(bezier,x,y,rx,ry,width){
-  return bezierEraseWith(bezier,new RectEraser(x,y,rx,ry,width));
 }
 
 
@@ -304,7 +281,7 @@ function bezierIntersect(bezier,x,y,r){
     var r2=polyAdd(polyMult(bezx,bezx),polyMult(bezy,bezy));
     r2[0]-=r*r;
 
-    var results=solveAll(r2,10);
+    var results=solveAll(r2,5);
     if(results.length!=1||results[0][0]!=0||results[0][1]!=1)return true;
   }
   return false;

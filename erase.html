@@ -64,7 +64,7 @@ function EraseTool(touch){
   function erase(x,y){
     var out=[];
     for(var i=0;i<objects.length;i++){
-      var lefts=bezierErase(objects[i],x,y,r);
+      var lefts=bezierEraseWith(objects[i],new CircleEraser(x,y,r));
       out.push.apply(out,lefts);
     }
     objects=out;
@@ -77,7 +77,7 @@ function EraseTool(touch){
     var dy=point.y-prev.y;
     var out=[];
     for(var i=0;i<objects.length;i++){
-      var lefts=bezierEraseRect(objects[i],prev.x,prev.y,dx,dy,2*r);
+      var lefts=bezierEraseWith(objects[i],new RectEraser(prev.x,prev.y,dx,dy,2*r));
       out.push.apply(out,lefts);
     }
     objects=out;
