@@ -135,8 +135,7 @@ function solveAll(arr,level){
   return range.array;
 }
 
-
-function bezierErase(bezier,x,y,r){
+function bezierEraseWith(bezier, eraser){
   var outs=[];
   var ta=[1,0,-3,2];
   var tb=[0,3,-6,3];
@@ -155,16 +154,12 @@ function bezierErase(bezier,x,y,r){
 
   for(var i=0;i<bezier.length-1;i++){
     var p1=bezier[i],p2=bezier[i+1];
+    var dx=p2.x-p1.x,dy=p2.y-p1.y;
 
     var xa=p1.x,xb=p1.ln*p1.dx,xc=-p2.lp*p2.dx,xd=p2.x;
     var ya=p1.y,yb=p1.ln*p1.dy,yc=-p2.lp*p2.dy,yd=p2.y;
     var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
     var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
-    bezx[0]-=x;
-    bezy[0]-=y;
-
-    var r2=polyAdd(polyMult(bezx,bezx),polyMult(bezy,bezy));
-    r2[0]-=r*r;
 
     function dAt(p,t){
       var dx=polyAssign(polyDerivate(bezx),t)
@@ -174,7 +169,7 @@ function bezierErase(bezier,x,y,r){
       return r;
     }
 
-    var results=solveAll(r2,10);
+    var results=eraser.erase(bezx,bezy);
 
     for(var j=0;j<results.length;j++){
       var res=results[j];
@@ -182,13 +177,13 @@ function bezierErase(bezier,x,y,r){
       var t=res[1]-res[0];
       if(res[0]==0)a=p1;
       else{
-        a={x:polyAssign(bezx,res[0])+x,y:polyAssign(bezy,res[0])+y,dx:0,dy:0}
+        a={x:polyAssign(bezx,res[0]),y:polyAssign(bezy,res[0]),dx:0,dy:0}
         al=dAt(a,res[0]);
         a.ln=al/3;
       }
       if(res[1]==1)b=p2;
       else{
-        b={x:polyAssign(bezx,res[1])+x,y:polyAssign(bezy,res[1])+y,dx:0,dy:0}
+        b={x:polyAssign(bezx,res[1]),y:polyAssign(bezy,res[1]),dx:0,dy:0}
         bl=dAt(b,res[1]);
         b.lp=bl/3;
       }
@@ -198,6 +193,21 @@ function bezierErase(bezier,x,y,r){
     }
   }
   return outs;
+}
+
+function CircleEraser(x,y,r){
+  this.erase=function(bezx,bezy){
+    var bezx0=bezx[0],bezy0=bezy[0];
+    bezx[0]-=x;bezy[0]-=y;
+    var r2=polyAdd(polyMult(bezx,bezx),polyMult(bezy,bezy));
+    r2[0]-=r*r;
+    bezx[0]=bezx0;bezy[0]=bezy0;
+    return solveAll(r2,10);
+  }
+}
+
+function bezierErase(bezier,x,y,r){
+  return bezierEraseWith(bezier,new CircleEraser(x,y,r));
 }
 
 
@@ -255,74 +265,25 @@ function solveRect(a1,a2,level){
   return range.array;
 }
 
-function bezierEraseRect(bezier,x,y,rx,ry,width){
-  var outs=[];
-  var ta=[1,0,-3,2];
-  var tb=[0,3,-6,3];
-  var tc=[0,0,3,-3];
-  var td=[0,0,3,-2];
 
+function RectEraser(x,y,rx,ry,width){
   var length=Math.sqrt(rx*rx+ry*ry);
-  rx/=length;
-  ry/=length;
+  var cx=x+rx/2,cy=y+ry/2;
+  rx/=length;ry/=length;
 
-  var last=null;
-  function push(p1,p2){
-    if(last&&last[last.length-1]==p1){
-      last.push(p2);
-    }else{
-      last=[p1,p2];
-      outs.push(last);
-    }
-  }
-
-  for(var i=0;i<bezier.length-1;i++){
-    var p1=bezier[i],p2=bezier[i+1];
-    var dx=p2.x-p1.x,dy=p2.y-p1.y;
-
-    var xa=p1.x,xb=p1.ln*p1.dx,xc=-p2.lp*p2.dx,xd=p2.x;
-    var ya=p1.y,yb=p1.ln*p1.dy,yc=-p2.lp*p2.dy,yd=p2.y;
-    var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
-    var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
-    bezx[0]-=x+rx*length/2;
-    bezy[0]-=y+ry*length/2;
-
-    
+  this.erase=function(bezx,bezy){
+    var bezx0=bezx[0],bezy0=bezy[0];
+    bezx[0]-=cx;bezy[0]-=cy;
     var rl=polyAdd(polyScale(2*rx/length,bezx),polyScale(2*ry/length,bezy));
     var rw=polyAdd(polyScale(2*ry/width,bezx),polyScale(-2*rx/width,bezy));
-
-    function dAt(p,t){
-      var dx=polyAssign(polyDerivate(bezx),t)
-      var dy=polyAssign(polyDerivate(bezy),t)
-      var r=Math.sqrt(dx*dx+dy*dy);
-      p.dx=dx/r,p.dy=dy/r;
-      return r;
-    }
-
-    var results=solveRect(rw,rl,10);
-    for(var j=0;j<results.length;j++){
-      var res=results[j];
-      var a,b;
-      var t=res[1]-res[0];
-      if(res[0]==0)a=p1;
-      else{
-        a={x:polyAssign(bezx,res[0])+x+rx*length/2,y:polyAssign(bezy,res[0])+y+ry*length/2,dx:0,dy:0}
-        al=dAt(a,res[0]);
-        a.ln=al/3;
-      }
-      if(res[1]==1)b=p2;
-      else{
-        b={x:polyAssign(bezx,res[1])+x+rx*length/2,y:polyAssign(bezy,res[1])+y+ry*length/2,dx:0,dy:0}
-        bl=dAt(b,res[1]);
-        b.lp=bl/3;
-      }
-      a.ln*=t;
-      b.lp*=t;
-      push(a,b);
-    }
+    bezx[0]=bezx0;bezy[0]=bezy0;
+    return solveRect(rw,rl,10);
   }
-  return outs;
 }
+function bezierEraseRect(bezier,x,y,rx,ry,width){
+  return bezierEraseWith(bezier,new RectEraser(x,y,rx,ry,width));
+}
+
 
 function bezierIntersect(bezier,x,y,r){
   var ta=[1,0,-3,2];
