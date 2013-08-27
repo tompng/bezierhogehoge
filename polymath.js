@@ -55,6 +55,17 @@ function polySolve(arr,t,step){
   return t;
 }
 
+function RangeList(){
+  this.array=[];
+  this.last=[];
+}
+RangeList.prototype.push=function(t0,t1){
+  if(this.last[1]==t0){
+    this.last[1]=t1;
+  }else{
+    this.array.push(this.last=[t0,t1]);
+  }
+}
 
 function solveAll(arr,level){
   var D=Math.pow(0.1,level);
@@ -80,17 +91,14 @@ function solveAll(arr,level){
     if(ymax<-sumdif)return -1;
     return [y0,y1,Math.abs(sumdif/sumc1)];
   }
-  var outs=[];
-  var last=[];
-  function push(t0,t1){
-    if(last[1]==t0)last[1]=t1;
-    else outs.push(last=[t0,t1]);
-  }
+
+  var range=new RangeList();
+
   function solve(t0,t1){
     rec++;
     var c=comp(t0,t1);
     if(c==1){
-      push(t0,t1);
+      range.push(t0,t1);
     }else if(c!=-1){
       var y0=c[0],y1=c[1],dt=c[2];
       if(t1-t0>D){
@@ -98,7 +106,7 @@ function solveAll(arr,level){
           var tt=(t0*y1-t1*y0)/(y1-y0);
           var s0=Math.max(tt-dt,t0);
           var s1=Math.min(tt+dt,t1);
-          if(s0!=t0&&y0>0)push(t0,s0);
+          if(s0!=t0&&y0>0)range.push(t0,s0);
           if(2*(s1-s0)<t1-t0){
             solve(s0,s1);
           }else{
@@ -106,25 +114,25 @@ function solveAll(arr,level){
             solve(s0,sm);
             solve(sm,s1);
           }
-          if(s1!=t1&&y1>0)push(s1,t1);
+          if(s1!=t1&&y1>0)range.push(s1,t1);
         }else{
           var tm=(t0+t1)/2;
           solve(t0,tm);
           solve(tm,t1);
         }
       }else{
-        if(y0>=0&&y1>=0)push(t0,t1);
+        if(y0>=0&&y1>=0)range.push(t0,t1);
         else if(y0>0||y1>0){
           var tt=(t1*y1-t0*y0)/(y1-y0);
-          if(y0<0)push(tt,t1);
-          else push(t0,tt);
+          if(y0<0)range.push(tt,t1);
+          else range.push(t0,tt);
         }
       }
     }
   }
   solve(0,1);
   if(rec>10)console.log(rec);
-  return outs;
+  return range.array;
 }
 
 
@@ -216,19 +224,14 @@ function solveRect(a1,a2,level){
     if(ymax<-1-sumdif||1+sumdif<ymin)return 1;
     return 0;
   }
-  var outs=[];
-  var last=[];
-  function push(t0,t1){
-    if(last[1]==t0)last[1]=t1;
-    else outs.push(last=[t0,t1]);
-  }
+  var range=new RangeList();
   function solve(t0,t1,i){
     rec++;
     var c1=rcomp(a1,t0,t1);
     var c2=rcomp(a2,t0,t1);
     var c=c1==1||c2==1?1:c1==-1&&c2==-1?-1:0;
     if(c>0){
-      push(t0,t1);
+      range.push(t0,t1);
     }else if(c==0){
       if(i<level){
         var tm=(t0+t1)/2;
@@ -238,18 +241,18 @@ function solveRect(a1,a2,level){
         return;
         var y0=polyAssign(arr,t0);
         var y1=polyAssign(arr,t1);
-        if(y0>=0&&y1>=0)push(t0,t1);
+        if(y0>=0&&y1>=0)range.push(t0,t1);
         else if(y0>0||y1>0){
           var tt=(t1*y1-t0*y0)/(y1-y0);
-          if(y0<0)push(tt,t1);
-          else push(t0,tt);
+          if(y0<0)range.push(tt,t1);
+          else range.push(t0,tt);
         }
       }
     }
   }
   solve(0,1,0);
   if(rec>10)console.log(rec);
-  return outs;
+  return range.array;
 }
 
 function bezierEraseRect(bezier,x,y,rx,ry,width){
