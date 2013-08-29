@@ -4,7 +4,7 @@
 <script src='bezier.js'></script>
 <script src='polymath.js'></script>
 <script src='mergebuffer.js'></script>
-<script src='http://localhost:3333/socket.io/socket.io.js'></script>
+<script src='socket.io/socket.io.js'></script>
 <script>
 var W,H;
 var g,canvas;
@@ -28,7 +28,7 @@ function delay(data){
 }
 
 $(function(){
-  ws=io.connect('http://localhost:3333');
+  ws=io.connect(location.href);
   ws.on('data',function(data){
     //delay(data);
     buffer.push(data,true)
