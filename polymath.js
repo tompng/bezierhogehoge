@@ -139,7 +139,12 @@ function bezierEraseWith(bezier, eraser){
   var outs=[];
   var last=null;
   function push(p1,p2){
-    if(last&&last[last.length-1]==p1){
+    var l=last&&last[last.length-1];
+    if(l==p1){
+      last.push(p2);
+    }else if(l&&l.x==p1.x&&l.y==p1.y){
+      last[last.length-1]=p1;
+      p1.lp=l.lp;
       last.push(p2);
     }else{
       last=[p1,p2];
@@ -170,20 +175,30 @@ function bezierEraseWith(bezier, eraser){
       var res=results[j];
       var a,b;
       var t=res[1]-res[0];
-      if(res[0]==0)a=p1;
-      else{
+      if(t==1){
+        var a={x:p1.x,y:p1.y,dx:p1.dx,dy:p1.dy,lp:p1.lp,ln:p1.ln}
+        var b={x:p2.x,y:p2.y,dx:p2.dx,dy:p2.dy,lp:p2.lp,ln:p2.ln}
+        push(a,b);
+        continue;
+      }
+      if(res[0]==0){
+        //a=p1;
+        a={x:p1.x,y:p1.y,dx:p1.dx,dy:p1.dy,lp:p1.lp,ln:p1.ln*t}
+      }else{
         a={x:polyAssign(bezx,res[0]),y:polyAssign(bezy,res[0]),dx:0,dy:0}
         al=dAt(a,res[0]);
-        a.ln=al/3;
+        a.ln=al*t/3;
       }
-      if(res[1]==1)b=p2;
-      else{
+      if(res[1]==1){
+        //b=p2;
+        b={x:p2.x,y:p2.y,dx:p2.dx,dy:p2.dy,lp:p2.lp*t}
+      }else{
         b={x:polyAssign(bezx,res[1]),y:polyAssign(bezy,res[1]),dx:0,dy:0}
         bl=dAt(b,res[1]);
-        b.lp=bl/3;
+        b.lp=bl*t/3;
       }
-      a.ln*=t;
-      b.lp*=t;
+      // a.ln*=t;
+      // b.lp*=t;
       push(a,b);
     }
   }

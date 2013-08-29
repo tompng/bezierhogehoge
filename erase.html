@@ -3,23 +3,45 @@
 <script src='multitouch.js'></script>
 <script src='bezier.js'></script>
 <script src='polymath.js'></script>
+<script src='mergebuffer.js'></script>
 <script>
 var W,H;
 var g,canvas;
 var bezierD=2;
 
 var objects=[];
-
+var buffer=new MergeBuffer();
+buffer.listener={update:render}
+function genID(){
+  return (0x7fffffff*Math.random())|0;
+}
+function post(data){
+  var id=data.operations[0].src;
+  var obj=buffer.unmerged[id];
+  setTimeout(function(){
+    if(!id||!obj)return;
+    var dst={};dst[genID()]=obj;
+    var data={id:genID(),operations:[{src:id,dst:dst}]};
+    buffer.push(data,true)
+  },500);
+  setTimeout(function(){buffer.push(data,true)},1000);
+  buffer.push(data);
+}
+function add(obj){
+  var dst={};
+  dst[genID()]=obj;
+  var data={id:genID(),operations:[{dst:dst}]};
+  post(data);
+}
 
 function DrawTool(touch){
-  touch.move=function(){
-  }
+  touch.move=function(){}
   touch.update=function(point){
     renderLine(touch.points);
     if(dotFlag)renderDot(touch.points);
   }
   touch.end=function(){
-    objects.push(BezierConverter.convert(this.points,bezierD));
+    add(BezierConverter.convert(this.points,bezierD));
   }
 }
 
@@ -58,29 +80,39 @@ function MoveTool(touch){
   }
 }
 
+function compXY(p,q){return p.x==q.x&&p.y==q.y;}
 
 function EraseTool(touch){
   var r=32;
-  function erase(x,y){
-    var out=[];
-    for(var i=0;i<objects.length;i++){
-      var lefts=bezierEraseWith(objects[i],new CircleEraser(x,y,r));
-      out.push.apply(out,lefts);
+  function bezierErase(bez,x,y,dx,dy){
+    var arr=bezierEraseWith(bez,new CircleEraser(x,y,r));
+    if(!dx&&!dy)return arr;
+    var arr2=[];
+    for(var i=0;i<arr.length;i++){
+      arr2.push.apply(arr2,bezierEraseWith(arr[i],new RectEraser(x,y,dx,dy,2*r)))
     }
-    objects=out;
+    return arr2;
+  }
+  function erase(x,y,dx,dy){
+    var operations=[];
+    for(var id in buffer.unmerged){
+      var bezier=buffer.unmerged[id];
+      if(!bezier)continue;
+      var lefts=bezierErase(bezier,x,y,dx,dy);
+      if(lefts.length==1){
+        var bez=lefts[0];
+        if(bez.length==bezier.length&&compXY(bez[0],bezier[0])&&compXY(bez[bez.length-1],bezier[bezier.length-1]))continue;
+      }
+      var dst={};
+      for(var i=0;i<lefts.length;i++)dst[genID()]=lefts[i];
+      operations.push({src:id,dst:dst})
+    }
+    if(operations.length)post({id:genID(),operations:operations});
   }
   erase(touch.x,touch.y);
   touch.move=function(point){
     var prev=touch.points[touch.points.length-2];
-    erase(point.x,point.y);
-    var dx=point.x-prev.x;
-    var dy=point.y-prev.y;
-    var out=[];
-    for(var i=0;i<objects.length;i++){
-      var lefts=bezierEraseWith(objects[i],new RectEraser(prev.x,prev.y,dx,dy,2*r));
-      out.push.apply(out,lefts);
-    }
-    objects=out;
+    erase(prev.x,prev.y,point.x-prev.x,point.y-prev.y,2*r);
   }
   touch.update=function(point){
     g.globalAlpha=0.1;
@@ -108,7 +140,7 @@ $(function(){
     t=t+Math.sin(20*t)/40;
     line.push({x:200+100*(1+t)*Math.cos(2*Math.PI*t)+noise*Math.random(),y:200+100*(1+t)*Math.sin(2*Math.PI*t)+noise*Math.random()})
   }
-  objects.push(BezierConverter.convert(line,bezierD));
+  add(BezierConverter.convert(line,bezierD));
   render();
 });
 
@@ -119,9 +151,13 @@ function render(){
   g.lineJoin="round"
   g.lineWidth=2
   g.lineCap='round'
-  for(var i=0;i<objects.length;i++){
-    renderLine(objects[i]);
-    if(dotFlag)renderDot(objects[i]);
+  for(var id in buffer.unmerged){
+    var obj=buffer.unmerged[id];
+    if(!obj)continue;
+    if(!buffer.merged[id])g.strokeStyle='red'
+    renderLine(obj);
+    g.strokeStyle='black'
+    if(dotFlag)renderDot(obj);
   }
 }
 
