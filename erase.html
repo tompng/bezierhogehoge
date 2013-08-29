@@ -4,6 +4,7 @@
 <script src='bezier.js'></script>
 <script src='polymath.js'></script>
 <script src='mergebuffer.js'></script>
+<script src='http://localhost:3333/socket.io/socket.io.js'></script>
 <script>
 var W,H;
 var g,canvas;
@@ -15,16 +16,27 @@ buffer.listener={update:render}
 function genID(){
   return (0x7fffffff*Math.random())|0;
 }
-function post(data){
-  var id=data.operations[0].src;
-  var obj=buffer.unmerged[id];
+
+var ws;
+
+var delayBuffer=[]
+function delay(data){
+  delayBuffer.push(data);
   setTimeout(function(){
-    if(!id||!obj)return;
-    var dst={};dst[genID()]=obj;
-    var data={id:genID(),operations:[{src:id,dst:dst}]};
+    buffer.push(hoges.shift(),true);
+  },5000*Math.random());
+}
+
+$(function(){
+  ws=io.connect('http://localhost:3333');
+  ws.on('data',function(data){
+    //delay(data);
     buffer.push(data,true)
-  },500);
-  setTimeout(function(){buffer.push(data,true)},1000);
+  });
+})
+
+function post(data){
+  ws.emit('data',data);
   buffer.push(data);
 }
 function add(obj){
@@ -123,7 +135,7 @@ function EraseTool(touch){
   }
 }
 var Tool=DrawTool;
-var dotFlag=true;
+var dotFlag=false;
 $(function(){
   canvas=$('canvas').get(0)
   W=canvas.width;
@@ -133,14 +145,14 @@ $(function(){
     new Tool(touch);
   },render);
 
-  var N=200;
-  var noise=2;
-  var line=[];for(var i=0;i<=N;i++){
-    t=i/N;
-    t=t+Math.sin(20*t)/40;
-    line.push({x:200+100*(1+t)*Math.cos(2*Math.PI*t)+noise*Math.random(),y:200+100*(1+t)*Math.sin(2*Math.PI*t)+noise*Math.random()})
-  }
-  add(BezierConverter.convert(line,bezierD));
+  // var N=200;
+  // var noise=2;
+  // var line=[];for(var i=0;i<=N;i++){
+  //   t=i/N;
+  //   t=t+Math.sin(20*t)/40;
+  //   line.push({x:200+100*(1+t)*Math.cos(2*Math.PI*t)+noise*Math.random(),y:200+100*(1+t)*Math.sin(2*Math.PI*t)+noise*Math.random()})
+  // }
+  // add(BezierConverter.convert(line,bezierD));
   render();
 });
 
@@ -154,9 +166,7 @@ function render(){
   for(var id in buffer.unmerged){
     var obj=buffer.unmerged[id];
     if(!obj)continue;
-    if(!buffer.merged[id])g.strokeStyle='red'
     renderLine(obj);
-    g.strokeStyle='black'
     if(dotFlag)renderDot(obj);
   }
 }
@@ -218,5 +228,5 @@ button, input{font-size:16px;}
   <div id='draw' onclick="set('draw')" ontouchstart="set('draw')">Draw</div>
   <div id='move' onclick="set('move')" ontouchstart="set('move')">Move</div>
   <div id='erase' onclick="set('erase')" ontouchstart="set('erase')">Erase</div>
-  <input type=checkbox onchange="dotFlag=checked;render()" checked>
+  <input type=checkbox onchange="dotFlag=checked;render()">
 </div>
