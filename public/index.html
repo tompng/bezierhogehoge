@@ -23,15 +23,15 @@ var delayBuffer=[]
 function delay(data){
   delayBuffer.push(data);
   setTimeout(function(){
-    buffer.push(hoges.shift(),true);
+    buffer.push(delayBuffer.shift(),true);
   },5000*Math.random());
 }
 
 $(function(){
   ws=io.connect(location.href);
   ws.on('data',function(data){
-    //delay(data);
-    buffer.push(data,true)
+    delay(data);
+    //buffer.push(data,true)
   });
 })
 
@@ -42,7 +42,7 @@ function post(data){
 function add(obj){
   var dst={};
   dst[genID()]=obj;
-  var data={id:genID(),operations:[{dst:dst}]};
+  var data={id:genID(),operations:[{type:'change',dst:dst}]};
   post(data);
 }
 
@@ -59,26 +59,26 @@ function DrawTool(touch){
 
 function MoveTool(touch){
   var r=32;
-  var mobjs=[];
+  var mids=[];
   var x=touch.x;
   var y=touch.y;
-  for(var i=0;i<objects.length;i++){
-    if(bezierIntersect(objects[i],x,y,r)){
-      mobjs.push(objects[i]);
-    }
+  for(var id in buffer.unmerged){
+    var obj=buffer.unmerged[id];
+    if(obj&&bezierIntersect(obj,x,y,r))mids.push(id);
   }
   touch.move=function(point){
     var dx=point.x-x;
     var dy=point.y-y;
-    for(var i=0;i<mobjs.length;i++){
-      var bezier=mobjs[i];
-      for(var j=0;j<bezier.length;j++){
-        bezier[j].x+=dx;
-        bezier[j].y+=dy;
-      }
+    x=point.x;y=point.y;
+    var operations=[];
+    for(var i=0;i<mids.length;i++){
+      var src=mids[i];
+      if(!buffer.unmerged[src])continue;
+      var dst=genID();
+      operations.push({type:'move',src:src,dst:dst,dx:dx,dy:dy});
+      mids[i]=dst;
     }
-    x=point.x;
-    y=point.y;
+    if(operations.length)post({id:genID(),operations:operations});
   }
   touch.update=function(point){
     g.globalAlpha=0.1;
@@ -117,7 +117,7 @@ function EraseTool(touch){
       }
       var dst={};
       for(var i=0;i<lefts.length;i++)dst[genID()]=lefts[i];
-      operations.push({src:id,dst:dst})
+      operations.push({type:'change',src:id,dst:dst})
     }
     if(operations.length)post({id:genID(),operations:operations});
   }
