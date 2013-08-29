@@ -1,12 +1,22 @@
 "use strict";
-
-var io = require('socket.io');
+var PORT=3333;
+var http=require('http');
+var io=require('socket.io');
+var express=require('express');
 
 process.on('uncaughtException',function(error) {
   console.log(error,error.stack);
 });
+var app=express();
+app.get('/',function(req,res){res.sendfile('public/index.html');});
+['bezier.js','polymath.js','multitouch.js','mergebuffer.js'].forEach(function(file){
+  console.log(file);
+  app.get('/'+file,function(req,res){res.sendfile('public/'+file);});
+})
 
-var server = io.listen(3333);
+var server=http.createServer(app).listen(PORT);
+
+var ioserver = io.listen(server);
 
 var objects = {};
 function consume(data){
@@ -19,7 +29,7 @@ function consume(data){
     }
   }
 }
-server.on('connection',function(socket){
+ioserver.on('connection',function(socket){
   console.log('connect');
   socket.on('data',function(data){
     consume(data);
