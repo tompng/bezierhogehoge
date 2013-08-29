@@ -30,8 +30,8 @@ function delay(data){
 $(function(){
   ws=io.connect(location.href);
   ws.on('data',function(data){
-    delay(data);
-    //buffer.push(data,true)
+    //delay(data);
+    buffer.push(data,true)
   });
 })
 
