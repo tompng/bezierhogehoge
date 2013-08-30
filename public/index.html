@@ -124,7 +124,7 @@ function EraseTool(touch){
   erase(touch.x,touch.y);
   touch.move=function(point){
     var prev=touch.points[touch.points.length-2];
-    erase(prev.x,prev.y,point.x-prev.x,point.y-prev.y,2*r);
+    erase(point.x,point.y,prev.x-point.x,prev.y-point.y,2*r);
   }
   touch.update=function(point){
     g.globalAlpha=0.1;
