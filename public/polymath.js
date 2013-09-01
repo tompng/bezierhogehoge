@@ -130,7 +130,7 @@ function solveAll(arr,level){
   return range.array;
 }
 
-function bezierEraseWith(bezier, eraser){
+function bezierSplit(bezier,start,end){
   var ta=[1,0,-3,2];
   var tb=[0,3,-6,3];
   var tc=[0,0,3,-3];
@@ -138,19 +138,79 @@ function bezierEraseWith(bezier, eraser){
 
   var outs=[];
   var last=null;
-  function push(p1,p2){
-    var l=last&&last[last.length-1];
-    if(l==p1){
-      last.push(p2);
-    }else if(l&&l.x==p1.x&&l.y==p1.y){
-      last[last.length-1]=p1;
-      p1.lp=l.lp;
-      last.push(p2);
-    }else{
-      last=[p1,p2];
-      outs.push(last);
-    }
+
+  var range=new RangeList();
+  var istart=Math.ceil(start);
+  var iend=Math.floor(end);
+  var tstart=start+1-istart;
+  var tend=end-iend;
+  function dAt(p,p1,p2,t){
+    var xa=p1.x,xb=p1.ln*p1.dx,xc=-p2.lp*p2.dx,xd=p2.x;
+    var ya=p1.y,yb=p1.ln*p1.dy,yc=-p2.lp*p2.dy,yd=p2.y;
+    var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
+    var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
+    p.x=polyAssign(bezx,t);
+    p.y=polyAssign(bezy,t);
+    var dx=polyAssign(polyDerivate(bezx),t)
+    var dy=polyAssign(polyDerivate(bezy),t)
+    var dr=Math.sqrt(dx*dx+dy*dy);
+    p.dx=dx/dr;
+    p.dy=dy/dr;
+    return dr;
   }
+
+  if(iend<istart){
+    var t=tend-tstart;
+    var p1=bezier[iend],p2=bezier[istart];
+    var q1={},q2={}
+    var dr1=dAt(q1,p1,p2,tstart);
+    var dr2=dAt(q2,p1,p2,tend);
+    q1.ln=dr1*t/3;
+    q2.lp=dr2*t/3;
+    return [q1,q2];
+  }
+  var out=[];
+  var prev;
+  if(tstart<1){
+    var t=1-tstart;
+    var p1=bezier[istart-1],p2=bezier[istart];
+    var q={};
+    var dr=dAt(q,p1,p2,tstart);
+    q.ln=dr*t/3;
+    out.push(q);
+    prev={x:p2.x,y:p2.y,dx:p2.dx,dy:p2.dy,lp:p2.lp*t};
+  }else{
+    var p=bezier[istart];
+    prev={x:p.x,y:p.y,dx:p.dx,dy:p.dy};
+  }
+  out.push(prev);
+  for(var i=istart;i<iend;i++){
+    var p1=bezier[i];
+    var p2=bezier[i+1];
+    prev.ln=p1.ln;
+    prev={x:p2.x,y:p2.y,dx:p2.dx,dy:p2.dy,lp:p2.lp};
+    out.push(prev);
+  }
+  if(0<tend){
+    var t=tend;
+    var p1=bezier[iend],p2=bezier[iend+1];
+    var q={};
+    var dr=dAt(q,p1,p2,tend);
+    q.lp=dr*t/3;
+    prev.ln=p1.ln*t;
+    out.push(q);
+  }
+  return out;
+}
+
+function bezierEraseWith(bezier, eraser){
+
+  var ta=[1,0,-3,2];
+  var tb=[0,3,-6,3];
+  var tc=[0,0,3,-3];
+  var td=[0,0,3,-2];
+
+  var range=new RangeList();
 
   for(var i=0;i<bezier.length-1;i++){
     var p1=bezier[i],p2=bezier[i+1];
@@ -161,48 +221,20 @@ function bezierEraseWith(bezier, eraser){
     var bezx=polyAdd4(4,xa,ta,xb,tb,xc,tc,xd,td);
     var bezy=polyAdd4(4,ya,ta,yb,tb,yc,tc,yd,td);
 
-    function dAt(p,t){
-      var dx=polyAssign(polyDerivate(bezx),t)
-      var dy=polyAssign(polyDerivate(bezy),t)
-      var r=Math.sqrt(dx*dx+dy*dy);
-      p.dx=dx/r,p.dy=dy/r;
-      return r;
-    }
-
     var results=eraser.erase(bezx,bezy);
-
     for(var j=0;j<results.length;j++){
-      var res=results[j];
-      var a,b;
-      var t=res[1]-res[0];
-      if(t==1){
-        var a={x:p1.x,y:p1.y,dx:p1.dx,dy:p1.dy,lp:p1.lp,ln:p1.ln}
-        var b={x:p2.x,y:p2.y,dx:p2.dx,dy:p2.dy,lp:p2.lp,ln:p2.ln}
-        push(a,b);
-        continue;
-      }
-      if(res[0]==0){
-        //a=p1;
-        a={x:p1.x,y:p1.y,dx:p1.dx,dy:p1.dy,lp:p1.lp,ln:p1.ln*t}
-      }else{
-        a={x:polyAssign(bezx,res[0]),y:polyAssign(bezy,res[0]),dx:0,dy:0}
-        al=dAt(a,res[0]);
-        a.ln=al*t/3;
-      }
-      if(res[1]==1){
-        //b=p2;
-        b={x:p2.x,y:p2.y,dx:p2.dx,dy:p2.dy,lp:p2.lp*t}
-      }else{
-        b={x:polyAssign(bezx,res[1]),y:polyAssign(bezy,res[1]),dx:0,dy:0}
-        bl=dAt(b,res[1]);
-        b.lp=bl*t/3;
-      }
-      // a.ln*=t;
-      // b.lp*=t;
-      push(a,b);
+      range.push(i+results[j][0],i+results[j][1])
     }
   }
-  return outs;
+  var outs=[];
+  if(range.array[0]&&range.array[0][0]==0&&range.array[0][1]==bezier.length-1){
+    return [bezier];
+  }
+  for(var i=0;i<range.array.length;i++){
+    var r=range.array[i];
+    outs.push(b=bezierSplit(bezier,r[0],r[1]));
+  }
+  return outs
 }
 
 function CircleEraser(x,y,r){
