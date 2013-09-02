@@ -59,7 +59,7 @@ BezierConverter.smooth=function(line,r){
 
 BezierConverter.grad=function(line){
   var out=[];
-  for(var i=0;i<line.length;i++){p=line[i];out[i]={x:p.x,y:p.y,i:i};}
+  for(var i=0;i<line.length;i++){p=line[i];out[i]={x:p.x,y:p.y};}
   for(var i=1;i<out.length-1;i++){
     out[i].dx=(out[i+1].x-out[i-1].x)/2;
     out[i].dy=(out[i+1].y-out[i-1].y)/2;

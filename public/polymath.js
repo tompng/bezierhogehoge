@@ -226,15 +226,10 @@ function bezierEraseWith(bezier, eraser){
       range.push(i+results[j][0],i+results[j][1])
     }
   }
-  var outs=[];
   if(range.array[0]&&range.array[0][0]==0&&range.array[0][1]==bezier.length-1){
-    return [bezier];
+    return null;
   }
-  for(var i=0;i<range.array.length;i++){
-    var r=range.array[i];
-    outs.push(b=bezierSplit(bezier,r[0],r[1]));
-  }
-  return outs
+  return range.array;
 }
 
 function CircleEraser(x,y,r){

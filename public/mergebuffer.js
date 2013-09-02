@@ -45,20 +45,22 @@ function consume(objects,data,del){
         else objects[op.src]=null;
         objects[op.dst]=obj2;
       }break;
-      case 'change':{
-        if(op.src){
-          if(del)delete objects[op.src];
-          else objects[op.src]=null;
-        }
+      case 'split':{
+        var obj=objects[op.src];
+        if(del)delete objects[op.src];
+        else objects[op.src]=null;
         for(var id in op.dst){
-          objects[id]=op.dst[id];
+          var range=op.dst[id];
+          objects[id]=bezierSplit(obj,range[0],range[1]);
         }
+      }break;
+      case 'new':{
+        objects[op.id]=op.data;
       }break;
     }
   }
 }
 MergeBuffer.prototype.merge=function(data,buffer,forward){
-  //console.log('merge',data,buffer);
   if(data){
     consume(this.merged,data,true);
   }

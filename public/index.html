@@ -29,6 +29,9 @@ function delay(data){
 
 $(function(){
   ws=io.connect(location.href);
+  ws.on('init',function(data){
+    for(var i=0;i<data.length;i++)buffer.push(data[i],true);
+  })
   ws.on('data',function(data){
     //delay(data);
     buffer.push(data,true)
@@ -40,9 +43,7 @@ function post(data){
   buffer.push(data);
 }
 function add(obj){
-  var dst={};
-  dst[genID()]=obj;
-  var data={id:genID(),operations:[{type:'change',dst:dst}]};
+  var data={id:genID(),operations:[{type:'new',id:genID(),data:obj}]};
   post(data);
 }
 
@@ -95,15 +96,38 @@ function MoveTool(touch){
 function compXY(p,q){return p.x==q.x&&p.y==q.y;}
 
 function EraseTool(touch){
-  var r=32;
+  var R=32;
   function bezierErase(bez,x,y,dx,dy){
-    var arr=bezierEraseWith(bez,new CircleEraser(x,y,r));
-    if(!dx&&!dy)return arr;
-    var arr2=[];
-    for(var i=0;i<arr.length;i++){
-      arr2.push.apply(arr2,bezierEraseWith(arr[i],new RectEraser(x,y,dx,dy,2*r)))
+    var carr=bezierEraseWith(bez,new CircleEraser(x,y,R));
+    if(!dx&&!dy)return carr;
+    var rarr=bezierEraseWith(bez,new RectEraser(x,y,dx,dy,2*R));
+    if(!carr||!rarr)return carr||rarr;
+    var arr=[];
+    var last=null;
+    var ci=0,ri=0;
+    while(ci<carr.length||ri<rarr.length){
+      var crange=carr[ci],rrange=rarr[ri];
+      var xrange;
+      if(crange&&rrange){
+        if(crange[0]<rrange[0]){xrange=crange;ci++;}
+        else{xrange=rrange;ri++;}
+      }else{
+        if(crange)ci++;
+        else ri++;
+        xrange=crange||rrange;
+      }
+      if(!last){
+        last=xrange;
+      }else{
+        if(last[1]<=xrange[1]){
+          if(xrange[0]<last[1])arr.push([xrange[0],last[1]]);
+          last=xrange;
+        }else{
+          arr.push(xrange);
+        }
+      }
     }
-    return arr2;
+    return arr;
   }
   function erase(x,y,dx,dy){
     var operations=[];
@@ -111,25 +135,22 @@ function EraseTool(touch){
       var bezier=buffer.unmerged[id];
       if(!bezier)continue;
       var lefts=bezierErase(bezier,x,y,dx,dy);
-      if(lefts.length==1){
-        var bez=lefts[0];
-        if(bez.length==bezier.length&&compXY(bez[0],bezier[0])&&compXY(bez[bez.length-1],bezier[bezier.length-1]))continue;
-      }
+      if(!lefts)continue;
       var dst={};
       for(var i=0;i<lefts.length;i++)dst[genID()]=lefts[i];
-      operations.push({type:'change',src:id,dst:dst})
+      operations.push({type:'split',src:id,dst:dst})
     }
     if(operations.length)post({id:genID(),operations:operations});
   }
   erase(touch.x,touch.y);
   touch.move=function(point){
     var prev=touch.points[touch.points.length-2];
-    erase(point.x,point.y,prev.x-point.x,prev.y-point.y,2*r);
+    erase(point.x,point.y,prev.x-point.x,prev.y-point.y);
   }
   touch.update=function(point){
     g.globalAlpha=0.1;
     g.beginPath();
-    g.arc(point.x,point.y,r,0,2*Math.PI,true);
+    g.arc(point.x,point.y,R,0,2*Math.PI,true);
     g.stroke();
     g.globalAlpha=1;
   }
