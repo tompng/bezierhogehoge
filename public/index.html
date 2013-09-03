@@ -12,7 +12,7 @@ var bezierD=2;
 
 var objects=[];
 var buffer=new MergeBuffer();
-buffer.listener={update:render}
+buffer.listener={update:function(){}}
 function genID(){
   return (0x7fffffff*Math.random())|0;
 }
@@ -31,6 +31,8 @@ $(function(){
   ws=io.connect(location.href);
   ws.on('init',function(data){
     for(var i=0;i<data.length;i++)buffer.push(data[i],true);
+    buffer.listener={update:render};
+    render();
   })
   ws.on('data',function(data){
     //delay(data);
