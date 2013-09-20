@@ -45,6 +45,15 @@ function post(data){
   buffer.push(data);
 }
 function add(obj){
+  for(var i=0;i<obj.length;i++){
+    var p=obj[i];
+    p.x=(p.x*100|0)/100
+    p.y=(p.y*100|0)/100
+    p.dx=(p.dx*100|0)/100
+    p.dy=(p.dy*100|0)/100
+    if(p.lp)p.lp=(p.lp*100|0)/100
+    if(p.ln)p.ln=(p.ln*100|0)/100
+  }
   var data={id:genID(),operations:[{type:'new',id:genID(),data:obj}]};
   post(data);
 }
@@ -168,14 +177,6 @@ $(function(){
     new Tool(touch);
   },render);
 
-  // var N=200;
-  // var noise=2;
-  // var line=[];for(var i=0;i<=N;i++){
-  //   t=i/N;
-  //   t=t+Math.sin(20*t)/40;
-  //   line.push({x:200+100*(1+t)*Math.cos(2*Math.PI*t)+noise*Math.random(),y:200+100*(1+t)*Math.sin(2*Math.PI*t)+noise*Math.random()})
-  // }
-  // add(BezierConverter.convert(line,bezierD));
   render();
 });
 

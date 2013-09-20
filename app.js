@@ -19,13 +19,26 @@ var server=http.createServer(app).listen(PORT);
 var ioserver = io.listen(server);
 
 var buffer=[];
+var index=0;
 ioserver.on('connection',function(socket){
   console.log('connect');
   socket.on('data',function(data){
-    buffer.push(data);
-     socket.broadcast.emit('data',data);
-     socket.emit('data',data);
+    if(data.type=='revert'){
+      for(var i=0;i<buffer.length;i++){
+        if(buffer[i].id==data.id){
+          index=i+1;break;
+        }
+      }
+    }else if(data.type=='save'){
+      buffer=[data.data];
+      index=1;
+    }else{
+      buffer[index++]=data;
+      while(buffer.length>index)buffer.pop();
+    }
+    socket.broadcast.emit('data',data);
+    socket.emit('data',data);
   });
-  socket.emit('init',buffer);
+  socket.emit('init',{buffer:buffer,index:index});
   socket.on('disconnect',function(){});
 });
