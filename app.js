@@ -25,7 +25,7 @@ ioserver.on('connection',function(socket){
   socket.on('data',function(data){
     if(data.type=='revert'){
       for(var i=0;i<buffer.length;i++){
-        if(buffer[i].id==data.id){
+        if(buffer[i].id==data.dst){
           index=i+1;break;
         }
       }

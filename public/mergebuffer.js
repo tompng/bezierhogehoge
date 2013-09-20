@@ -75,3 +75,32 @@ MergeBuffer.prototype.merge=function(data,buffer,forward){
 MergeBuffer.prototype.push=function(data,merge){
   this.buffer.push(data,merge);
 }
+
+
+function OperationBuffer(cache,history){
+  this.history=history||new OperationHistory;
+  if(this.cache)this.buffer=[];
+}
+OperationBuffer.prototype={
+  snapshot:function(){
+    return this.history.snapshot();
+  },
+  push:function(data){
+    if(this.buffer)this.buffer.push(operation);
+    this.history.consume(data);
+  },
+  shift:function(id){
+    if(this.buffer&&this.buffer[0]&&this.buffer[0].id==id){
+      this.buffer.shift();
+      return true;
+    }
+    return false;
+  },
+  reset:function(history){
+    this.history=history;
+    if(!this.buffer)return;
+    for(var i=0;i<this.buffer.length;i++){
+      this.history.consume(this.buffer[i]);
+    }
+  }
+}
