@@ -39,8 +39,19 @@ $(function(){
   });
 })
 
+function undo(){
+  var dst=buffer.working.history.snapshots[buffer.working.history.index-1];
+  if(dst)post({id:genID(),type:'revert',dst:dst.id});
+}
+function redo(){
+  var dst=buffer.working.history.snapshots[buffer.working.history.index+1];
+  if(dst)post({id:genID(),type:'revert',dst:dst.id});
+}
+
+
 function post(data){
   if(!data)data=buffer.drainWorking();
+  else buffer.pushUnmerged(data);
   ws.emit('data',data);
 }
 function push(data){
@@ -254,6 +265,14 @@ canvas{position:absolute;left:0;top:0;background:#eee;}
   background:gray;
   color:white;
 }
+#tools div.button:hover{
+  background:silver;
+  color:white;
+}
+#tools div.button:active{
+  background:gray;
+  color:white;
+}
 
 button, input{font-size:16px;}
 </style>
@@ -263,4 +282,6 @@ button, input{font-size:16px;}
   <div id='move' onclick="set('move')" ontouchstart="set('move')">Move</div>
   <div id='erase' onclick="set('erase')" ontouchstart="set('erase')">Erase</div>
   <input type=checkbox onchange="dotFlag=checked;render()">
+  <div class='button' id='undo' onclick="undo()" ontouchstart="undo()">Undo</div>
+  <div class='button' id='redo' onclick="redo()" ontouchstart="redo()">Redo</div>
 </div>

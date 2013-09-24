@@ -1,10 +1,10 @@
 function OperationHistory(snapshots,index){
   this.snapshots=snapshots||[];
-  this.index=index||0;
+  this.index=index>=0?index:-1;
 }
 OperationHistory.prototype={
   snapshot:function(){
-    return this.snapshots[this.index-1];
+    return this.snapshots[this.index];
   },
   clone:function(){
     return new OperationHistory(this.snapshots.concat(),this.index);
@@ -14,25 +14,25 @@ OperationHistory.prototype={
     else if(data.type=='save')this.consumeSave(data);
     else this.consumeData(data);
   },
-  cosumeRevert:function(data){
+  consumeRevert:function(data){
     for(var i=0;i<this.snapshots.length;i++){
       if(this.snapshots[i].id==data.dst){
-        this.index=i+1;
+        this.index=i;
         return;
       }
     }
   },
   consumeSave:function(data){
     this.snapshots=[];
-    this.index=0;
+    this.index=-1;
     consumeData(data);
   },
   consumeData:function(data){
-    var before=this.snapshots[this.index-1];
+    var before=this.snapshots[this.index];
     var objects={};
     if(before)for(var i in before.objects){objects[i]=before.objects[i];}
-    this.snapshots[this.index++]={id:data.id,objects:objects}
-    while(this.snapshots.length>this.index)this.snapshots.pop();
+    this.snapshots[++this.index]={id:data.id,objects:objects}
+    while(this.snapshots.length>this.index+1)this.snapshots.pop();
     for(var i=0;i<data.operations.length;i++){
       var op=data.operations[i];
       if(op.src&&!objects[op.src])continue;
