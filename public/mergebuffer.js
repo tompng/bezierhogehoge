@@ -26,6 +26,7 @@ MergeBuffer.prototype={
   },
   drainWorking:function(){
     var data=this.working.compact();
+    if(data.operations.length==0)return null;
     this.working=new OperationBuffer(true);
     this.pushUnmerged(data);
     return data;

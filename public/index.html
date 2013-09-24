@@ -52,7 +52,7 @@ function redo(){
 function post(data){
   if(!data)data=buffer.drainWorking();
   else buffer.pushUnmerged(data);
-  ws.emit('data',data);
+  if(data)ws.emit('data',data);
 }
 function push(data){
   buffer.pushWorking(data);
