@@ -40,9 +40,13 @@ $(function(){
 })
 
 function post(data){
+  if(!data)data=buffer.drainWorking();
   ws.emit('data',data);
-  buffer.pushUnmerged(data);
 }
+function push(data){
+  buffer.pushWorking(data);
+}
+
 function add(obj){
   for(var i=0;i<obj.length;i++){
     var p=obj[i];
@@ -91,7 +95,7 @@ function MoveTool(touch){
       operations.push({type:'move',src:src,dst:dst,dx:dx,dy:dy});
       mids[i]=dst;
     }
-    if(operations.length)post({id:genID(),operations:operations});
+    if(operations.length)push({id:genID(),operations:operations});
   }
   touch.update=function(point){
     g.globalAlpha=0.1;
@@ -101,7 +105,7 @@ function MoveTool(touch){
     g.globalAlpha=1;
   }
   touch.end=function(){
-
+    post();
   }
 }
 
@@ -153,7 +157,7 @@ function EraseTool(touch){
       for(var i=0;i<lefts.length;i++)dst[genID()]=lefts[i];
       operations.push({type:'split',src:id,dst:dst})
     }
-    if(operations.length)post({id:genID(),operations:operations});
+    if(operations.length)push({id:genID(),operations:operations});
   }
   erase(touch.x,touch.y);
   touch.move=function(point){
@@ -166,6 +170,9 @@ function EraseTool(touch){
     g.arc(point.x,point.y,R,0,2*Math.PI,true);
     g.stroke();
     g.globalAlpha=1;
+  }
+  touch.end=function(){
+    post();
   }
 }
 var Tool=DrawTool;

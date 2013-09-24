@@ -42,14 +42,14 @@ MergeBuffer.prototype={
 
 function OperationBuffer(cache,history){
   this.history=history||new OperationHistory;
-  if(this.cache)this.buffer=[];
+  if(cache)this.buffer=[];
 }
 OperationBuffer.prototype={
   snapshot:function(){
     return this.history.snapshot();
   },
   push:function(data){
-    if(this.buffer)this.buffer.push(operation);
+    if(this.buffer)this.buffer.push(data);
     this.history.consume(data);
   },
   shift:function(id){
