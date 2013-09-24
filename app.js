@@ -9,7 +9,7 @@ process.on('uncaughtException',function(error) {
 });
 var app=express();
 app.get('/',function(req,res){res.sendfile('public/index.html');});
-['bezier.js','polymath.js','multitouch.js','mergebuffer.js'].forEach(function(file){
+['bezier.js','polymath.js','multitouch.js','mergebuffer.js','historyconsumer.js'].forEach(function(file){
   console.log(file);
   app.get('/'+file,function(req,res){res.sendfile('public/'+file);});
 })

@@ -3,6 +3,7 @@
 <script src='multitouch.js'></script>
 <script src='bezier.js'></script>
 <script src='polymath.js'></script>
+<script src='historyconsumer.js'></script>
 <script src='mergebuffer.js'></script>
 <script src='socket.io/socket.io.js'></script>
 <script>
@@ -12,10 +13,7 @@ var bezierD=2;
 
 var objects=[];
 var buffer=new MergeBuffer();
-buffer.listener={update:function(){}}
-function genID(){
-  return (0x7fffffff*Math.random())|0;
-}
+buffer.listener=null;
 
 var ws;
 
@@ -23,26 +21,27 @@ var delayBuffer=[]
 function delay(data){
   delayBuffer.push(data);
   setTimeout(function(){
-    buffer.push(delayBuffer.shift(),true);
+    buffer.push(delayBuffer.shift());
   },5000*Math.random());
 }
 
 $(function(){
   ws=io.connect(location.href);
   ws.on('init',function(data){
-    for(var i=0;i<data.length;i++)buffer.push(data[i],true);
-    buffer.listener={update:render};
+    for(var i=0;i<data.length;i++)buffer.push(data[i]);
+    buffer.listener=render;
     render();
   })
   ws.on('data',function(data){
     //delay(data);
-    buffer.push(data,true)
+    console.log(data)
+    buffer.push(data)
   });
 })
 
 function post(data){
   ws.emit('data',data);
-  buffer.push(data);
+  buffer.pushUnmerged(data);
 }
 function add(obj){
   for(var i=0;i<obj.length;i++){
@@ -74,8 +73,9 @@ function MoveTool(touch){
   var mids=[];
   var x=touch.x;
   var y=touch.y;
-  for(var id in buffer.unmerged){
-    var obj=buffer.unmerged[id];
+  var objects=buffer.objects();
+  for(var id in objects){
+    var obj=objects[id];
     if(obj&&bezierIntersect(obj,x,y,r))mids.push(id);
   }
   touch.move=function(point){
@@ -83,9 +83,10 @@ function MoveTool(touch){
     var dy=point.y-y;
     x=point.x;y=point.y;
     var operations=[];
+    var objects=buffer.objects();
     for(var i=0;i<mids.length;i++){
       var src=mids[i];
-      if(!buffer.unmerged[src])continue;
+      if(!objects[src])continue;
       var dst=genID();
       operations.push({type:'move',src:src,dst:dst,dx:dx,dy:dy});
       mids[i]=dst;
@@ -142,8 +143,9 @@ function EraseTool(touch){
   }
   function erase(x,y,dx,dy){
     var operations=[];
-    for(var id in buffer.unmerged){
-      var bezier=buffer.unmerged[id];
+    var objects=buffer.objects();
+    for(var id in objects){
+      var bezier=objects[id];
       if(!bezier)continue;
       var lefts=bezierErase(bezier,x,y,dx,dy);
       if(!lefts)continue;
@@ -187,8 +189,9 @@ function render(){
   g.lineJoin="round"
   g.lineWidth=2
   g.lineCap='round'
-  for(var id in buffer.unmerged){
-    var obj=buffer.unmerged[id];
+  var objects=buffer.objects();
+  for(var id in objects){
+    var obj=objects[id];
     if(!obj)continue;
     renderLine(obj);
     if(dotFlag)renderDot(obj);

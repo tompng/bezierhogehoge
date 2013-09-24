@@ -1,19 +1,18 @@
-//this={index:0, snapshots:[]}
 function OperationHistory(snapshots,index){
   this.snapshots=snapshots||[];
   this.index=index||0;
 }
 OperationHistory.prototype={
   snapshot:function(){
-    return this.snapshots[this.index];
+    return this.snapshots[this.index-1];
   },
   clone:function(){
     return new OperationHistory(this.snapshots.concat(),this.index);
   },
   consume:function (data){
-    if(data.type=='revert')consumeRevert(data);
-    else if(data.type=='save')consumeSave(data);
-    else consumeData(data);
+    if(data.type=='revert')this.consumeRevert(data);
+    else if(data.type=='save')this.consumeSave(data);
+    else this.consumeData(data);
   },
   cosumeRevert:function(data){
     for(var i=0;i<this.snapshots.length;i++){
