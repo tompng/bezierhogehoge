@@ -18,7 +18,7 @@ var server=http.createServer(app).listen(PORT);
 
 var ioserver = io.listen(server);
 
-var buffer=[];
+var buffer=[{id:0,operations:[]}];
 var index=0;
 ioserver.on('connection',function(socket){
   console.log('connect');
@@ -26,15 +26,15 @@ ioserver.on('connection',function(socket){
     if(data.type=='revert'){
       for(var i=0;i<buffer.length;i++){
         if(buffer[i].id==data.dst){
-          index=i+1;break;
+          index=i;break;
         }
       }
     }else if(data.type=='save'){
       buffer=[data.data];
-      index=1;
+      index=0;
     }else{
-      buffer[index++]=data;
-      while(buffer.length>index)buffer.pop();
+      buffer[++index]=data;
+      while(buffer.length>index+1)buffer.pop();
     }
     socket.broadcast.emit('data',data);
     socket.emit('data',data);

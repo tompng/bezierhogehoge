@@ -13,16 +13,16 @@ MergeBuffer.prototype={
     this.unmerged.shift(data.id)
     this.unmerged.recalc(this.merged.history.clone());
     this.working.recalc(this.unmerged.history.clone());
-    this.listener();
+    if(this.listener)this.listener();
   },
   pushUnmerged:function(data){
     this.unmerged.push(data);
     this.working.recalc(this.unmerged.history.clone());
-    this.listener();
+    if(this.listener)this.listener();
   },
   pushWorking:function(data){
     this.working.push(data);
-    this.listener();
+    if(this.listener)this.listener();
   },
   drainWorking:function(){
     var data=this.working.compact();

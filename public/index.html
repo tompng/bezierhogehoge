@@ -28,13 +28,13 @@ function delay(data){
 $(function(){
   ws=io.connect(location.href);
   ws.on('init',function(data){
-    for(var i=0;i<data.length;i++)buffer.push(data[i]);
+    for(var i=0;i<data.buffer.length;i++)buffer.pushMerged(data.buffer[i]);
+    buffer.pushMerged({type:'revert',dst:data.buffer[data.index].id})
     buffer.listener=render;
     render();
   })
   ws.on('data',function(data){
     //delay(data);
-    console.log(data)
     buffer.push(data)
   });
 })
