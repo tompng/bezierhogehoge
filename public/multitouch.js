@@ -1,12 +1,12 @@
 (function($){
   function Touch(event){
-    this.x=event.pageX;
-    this.y=event.pageY;
+    this.x=event.offsetX;
+    this.y=event.offsetY;
     this.points=[{x:this.x,y:this.y}];
   }
   Touch.prototype._move=function(event){
     var prev=this.points[this.points.length-1];
-    var point={x:event.pageX,y:event.pageY};
+    var point={x:event.offsetX,y:event.offsetY};
     if(prev.x==point.x&&prev.y==point.y)return;
     this.points.push(point);
     if(this.move)this.move(point);
