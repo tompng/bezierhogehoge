@@ -25,7 +25,7 @@ OperationHistory.prototype={
   consumeSave:function(data){
     this.snapshots=[];
     this.index=-1;
-    consumeData(data);
+    this.consumeData(data);
   },
   consumeData:function(data){
     var before=this.snapshots[this.index];

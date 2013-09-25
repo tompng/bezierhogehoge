@@ -47,6 +47,9 @@ function redo(){
   var dst=buffer.working.history.snapshots[buffer.working.history.index+1];
   if(dst)post({id:genID(),type:'revert',dst:dst.id});
 }
+function save(){
+  post({id:genID(),type:'save',operations:buffer.saveOperations()});
+}
 
 
 function post(data){
@@ -284,4 +287,5 @@ button, input{font-size:16px;}
   <input type=checkbox onchange="dotFlag=checked;render()">
   <div class='button' id='undo' onclick="undo()" ontouchstart="undo()">Undo</div>
   <div class='button' id='redo' onclick="redo()" ontouchstart="redo()">Redo</div>
+  <div class='button' id='save' onclick="save()" ontouchstart="save()">Save</div>
 </div>

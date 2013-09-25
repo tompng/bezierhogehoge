@@ -38,6 +38,14 @@ MergeBuffer.prototype={
     var snapshot=this.snapshot();
     return snapshot&&snapshot.objects;
   },
+  saveOperations:function(){
+    var operations=[];
+    var objects=this.objects();
+    for(var id in objects){
+      operations.push({type:'new',id:id,data:objects[id]});
+    }
+    return operations;
+  },
   push:function(data){this.pushMerged(data);}
 }
 

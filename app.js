@@ -30,7 +30,7 @@ ioserver.on('connection',function(socket){
         }
       }
     }else if(data.type=='save'){
-      buffer=[data.data];
+      buffer=[{id:data.id,operations:data.operations}];
       index=0;
     }else{
       buffer[++index]=data;
