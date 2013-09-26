@@ -1,45 +1,31 @@
-function WBZController($el){
+function WBController($el){
   var canvas=$el.get(0);
   this.$el=$el;
   this.canvas=canvas;
   W=canvas.width=$el.width();
   H=canvas.height=$el.height();
+  console.log($el)
   var g=canvas.getContext('2d');
   var bezierD=2;
 
   var buffer=new MergeBuffer();
   buffer.listener=null;
 
-  var ws;
 
   $el.multitouch(function(touch){
     new Tool(touch);
   },render);
   render();
 
-
-
-  var delayBuffer=[]
-  function delay(data){
-    delayBuffer.push(data);
-    setTimeout(function(){
-      buffer.push(delayBuffer.shift());
-    },5000*Math.random());
+  this.oninit=function(data){
+    for(var i=0;i<data.buffer.length;i++)buffer.pushMerged(data.buffer[i]);
+    buffer.pushMerged({type:'revert',dst:data.buffer[data.index].id})
+    buffer.listener=render;
+    render();
   }
-
-  $(function(){
-    ws=io.connect(location.href);
-    ws.on('init',function(data){
-      for(var i=0;i<data.buffer.length;i++)buffer.pushMerged(data.buffer[i]);
-      buffer.pushMerged({type:'revert',dst:data.buffer[data.index].id})
-      buffer.listener=render;
-      render();
-    })
-    ws.on('data',function(data){
-      //delay(data);
-      buffer.push(data)
-    });
-  })
+  this.ondata=function(data){
+    buffer.push(data);
+  }
 
   function undo(){
     var dst=buffer.working.history.snapshots[buffer.working.history.index-1];
@@ -53,11 +39,10 @@ function WBZController($el){
     post({id:genID(),type:'save',operations:buffer.saveOperations()});
   }
 
-
   function post(data){
     if(!data)data=buffer.drainWorking();
     else buffer.pushUnmerged(data);
-    if(data)ws.emit('data',data);
+    if(data)$el.trigger('send',data);
   }
   function push(data){
     buffer.pushWorking(data);
@@ -81,7 +66,6 @@ function WBZController($el){
     touch.move=function(){}
     touch.update=function(point){
       renderLine(touch.points);
-      if(dotFlag)renderDot(touch.points);
     }
     touch.end=function(){
       add(BezierConverter.convert(this.points,bezierD));
@@ -202,21 +186,10 @@ function WBZController($el){
     var objects=buffer.objects();
     for(var id in objects){
       var obj=objects[id];
-      if(!obj)continue;
       renderLine(obj);
-      if(dotFlag)renderDot(obj);
     }
   }
 
-  function renderDot(points){
-    g.beginPath();
-    for(var i=0;i<points.length;i++){
-      var p=points[i];
-      g.moveTo(p.x,p.y);
-      g.arc(p.x,p.y,2,0,2*Math.PI,true);
-    }
-    g.fill();
-  }
   function renderLine(line){
     var p=line[0];
     g.beginPath();
@@ -245,10 +218,15 @@ function WBZController($el){
   this.redo=redo;
 }
 
-$.fn.wbzShare=function(){
-  $(this).data('controller',new WBZController($(this)));
+$.fn.wb=function(){
+  if(!$(this).data('controller'))$(this).data('controller',new WBController($(this)));
 }
-$.fn.wbzShareSave=function(){$(this).data('controller').save();}
-$.fn.wbzShareUndo=function(){$(this).data('controller').undo();}
-$.fn.wbzShareRedo=function(){$(this).data('controller').redo();}
-$.fn.wbzShareSetMode=function(mode){$(this).data('controller').setMode(mode);}
+$.fn.wbSave=function(){$(this).data('controller').save();}
+$.fn.wbUndo=function(){$(this).data('controller').undo();}
+$.fn.wbRedo=function(){$(this).data('controller').redo();}
+$.fn.wbSetMode=function(mode){console.log(mode);$(this).data('controller').setMode(mode);}
+$.fn.wbSetLineWidth=function(a){console.log('w',a)}
+$.fn.wbSetPhase=function(a){console.log('p',a)}
+$.fn.wbDelete=function(){$(this).wbSetMode('erase')}
+$.fn.wbOnInit=function(data){$(this).data('controller').oninit(data)}
+$.fn.wbOnData=function(data){$(this).data('controller').ondata(data)}

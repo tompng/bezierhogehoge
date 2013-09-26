@@ -11,7 +11,32 @@
 
 
 
-$(function(){$("canvas").wbzShare()})
+$(function(){
+  $("canvas").each(function(){
+    $(this).wb();
+    var $el=$(this)
+    var delayBuffer=[]
+    function delay(data){
+      delayBuffer.push(data);
+      setTimeout(function(){
+        var data=delayBuffer.shift();
+        $el.wbOnData(data);
+      },1000*Math.random());
+    }
+    ws=io.connect('http://'+location.hostname+':3333');
+    ws.on('init',function(data){
+      $el.wbOnInit(data);
+    })
+    ws.on('data',function(data){
+      //delay(data);
+      $el.wbOnData(data);
+    });
+    $el.on('send',function(e,data){ws.emit('data',data);})
+
+
+
+  });
+})
 </script>
 <style>
 canvas{position:absolute;left:0;top:0;background:#eee;}
@@ -40,13 +65,13 @@ canvas{position:absolute;left:0;top:0;background:#eee;}
 
 button, input{font-size:16px;}
 </style>
-<canvas style='position:absolute;left:0;top:0;background:#eee;' width=400 height=400></canvas> 
+<canvas style='position:absolute;left:0;top:0;background:#eee;' width=400 height=400></canvas>
 <div id='tools' class='draw'>
-  <div id='draw' onclick="$('canvas').wbzShareSetMode('draw')">Draw</div>
-  <div id='move' onclick="$('canvas').wbzShareSetMode('move')">Move</div>
-  <div id='erase' onclick="$('canvas').wbzShareSetMode('erase')">Erase</div>
-  <input type=checkbox onchange="dotFlag=checked;render()">
-  <div class='button' id='undo' onclick="$('canvas').wbzShareUndo()">Undo</div>
-  <div class='button' id='redo' onclick="$('canvas').wbzShareRedo()">Redo</div>
-  <div class='button' id='save' onclick="$('canvas').wbzShareSave()">Save</div>
+  <div id='draw' onclick="$('canvas').wbSetMode('draw')">Draw</div>
+  <div id='move' onclick="$('canvas').wbSetMode('move')">Move</div>
+  <div id='erase' onclick="$('canvas').wbSetMode('erase')">Erase</div>
+  <div class='button' id='undo' onclick="$('canvas').wbUndo()">Undo</div>
+  <div class='button' id='redo' onclick="$('canvas').wbRedo()">Redo</div>
+  <div class='button' id='save' onclick="$('canvas').wbSave()">Save</div>
 </div>
+<canvas style='position:absolute;left:0;top:500;background:#eee;' width=400 height=400></canvas>
