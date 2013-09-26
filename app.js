@@ -9,10 +9,15 @@ process.on('uncaughtException',function(error) {
 });
 var app=express();
 app.get('/',function(req,res){res.sendfile('public/index.html');});
-['bezier.js','polymath.js','multitouch.js','mergebuffer.js','historyconsumer.js'].forEach(function(file){
-  console.log(file);
-  app.get('/'+file,function(req,res){res.sendfile('public/'+file);});
-})
+
+app.get('/:file',function(req,res){
+  var file=req.params.file
+  if(file.match(/^[a-zA-Z0-9_][a-zA-Z0-9_.-]*$/)){
+    res.sendfile('public/'+file);
+  }else{
+    res.end();
+  }
+});
 
 var server=http.createServer(app).listen(PORT);
 
