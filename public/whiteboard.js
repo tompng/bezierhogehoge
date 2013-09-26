@@ -1,15 +1,23 @@
 function WBZController($el){
-  var canvas=$el[0];
+  var canvas=$el.get(0);
   this.$el=$el;
   this.canvas=canvas;
-  var W,H;
-  var g;
+  W=canvas.width=$el.width();
+  H=canvas.height=$el.height();
+  var g=canvas.getContext('2d');
   var bezierD=2;
 
   var buffer=new MergeBuffer();
   buffer.listener=null;
 
   var ws;
+
+  $el.multitouch(function(touch){
+    new Tool(touch);
+  },render);
+  render();
+
+
 
   var delayBuffer=[]
   function delay(data){
@@ -183,17 +191,6 @@ function WBZController($el){
   }
   var Tool=DrawTool;
   var dotFlag=false;
-  $(function(){
-    canvas=$('canvas').get(0)
-    W=canvas.width;
-    H=canvas.height;
-    g=canvas.getContext('2d');
-    $('canvas').multitouch(function(touch){
-      new Tool(touch);
-    },render);
-
-    render();
-  });
 
   function render(){
     g.clearRect(0,0,W,H);
